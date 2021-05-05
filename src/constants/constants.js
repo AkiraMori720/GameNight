@@ -1,0 +1,23 @@
+export const server_url = 'http://192.168.1.35:55555';
+export const PLAYER_ONE = 1;
+export const PLAYER_TWO = 2;
+export const PLAYER_THREE = 3;
+export const PLAYER_FOUR = 4;
+export const NAME = 'NAME';
+export const BID = 'BID';
+export const TEAM_ONE = 'TEAM_ONE';
+export const TEAM_TWO = 'TEAM_TWO';
+export const DARK = 'DARK';
+export const LIGHT = 'LIGHT';
+export const ORIGINAL = 'Original';
+export const BLUE = 'Blue';
+export const ORANGE = 'Orange';
+export const GREEN = 'Green';
+export const DARK_ORIGINAL = 'Dark Original';
+export const VOLT_BLUE = 'Volt Blue';
+export const MINT_GREEN = 'Mint Green';
+export const SEA_FOAM = 'Sea Foam';
+export const DARK_SEA_FOAM = 'Sea Foam ';
+export const VIOLET = 'Violet';
+export const PEACH = 'Peach';
+

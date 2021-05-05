@@ -1,0 +1,1 @@
+export const CURRENT_USER = "KLINE_CURRENT_USER";

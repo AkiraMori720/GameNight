@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Game Night Spadez</string>
+    <string name="facebook_app_id">179828850241843</string>
+    <string name="fb_login_protocol_scheme">fb179828850241843</string>
+</resources>
