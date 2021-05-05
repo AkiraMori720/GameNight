@@ -10,8 +10,7 @@ if (__DEV__) {
 
   enhancers = compose(
       applyMiddleware(reduxImmutableStateInvariant),
-      applyMiddleware(thunk),
-      Reactotron.createEnhancer()
+      applyMiddleware(thunk)
   );
 } else {
   enhancers = compose(

@@ -42,7 +42,7 @@ class firebaseServices {
             .catch(err => {
                 const errCode = err.code
                 const errMsg = err.message
-                callback && callback({ isSuccess: false, message: err })
+                callback && callback({ isSuccess: false, message: errMsg })
             })
     }
 
@@ -177,7 +177,7 @@ class firebaseServices {
             callback && callback({ isSuccess: true, response: snapshot.data(), message: "successfully" });
         })
             .catch((error) => {
-                callback && callback({ isSuccess: false, response: null, message: error });
+                callback && callback({ isSuccess: false, response: null, message: error.message });
             });
 
     }
@@ -191,14 +191,14 @@ class firebaseServices {
                 .then(response => {
                     callback({ isSuccess: true, response: null, message: "FCM token updated successfully" });
                 }).catch(error => {
-                    callback({ isSuccess: false, response: null, message: error });
+                    callback({ isSuccess: false, response: null, message: error.message });
                 });
         } else {
             return firebaseRef.update({ fcmToken: fcmToken, })
                 .then(response => {
                     callback({ isSuccess: true, response: null, message: "FCM token updated successfully" });
                 }).catch(error => {
-                    callback({ isSuccess: false, response: null, message: error });
+                    callback({ isSuccess: false, response: null, message: error.message });
                 });
         }
     };
@@ -210,7 +210,7 @@ class firebaseServices {
                 callback && callback({ isSuccess: true, response: snapshot.data(), message: "successfully" });
             })
             .catch((error) => {
-                callback && callback({ isSuccess: false, response: null, message: error });
+                callback && callback({ isSuccess: false, response: null, message: error.message });
             });
     }
 
@@ -228,7 +228,7 @@ class firebaseServices {
                 .then(response => {
                     callback && callback({ isSuccess: true, response: doc.data(), message: "Preference updated successfully" });
                 }).catch(error => {
-                    callback && callback({ isSuccess: false, response: null, message: error });
+                    callback && callback({ isSuccess: false, response: null, message: error.message });
                 });    
             } else {
                 firestore()
@@ -238,12 +238,12 @@ class firebaseServices {
                 .then(response => {
                     callback && callback({ isSuccess: true, response: doc.data(), message: "Preference updated successfully" });
                 }).catch(error => {
-                    callback && callback({ isSuccess: false, response: null, message: error });
+                    callback && callback({ isSuccess: false, response: null, message: error.message });
                 });    
             }
         })
-        .catch(err => {
-            callback && callback({ isSuccess: false, response: null, message: error });
+        .catch(error => {
+            callback && callback({ isSuccess: false, response: null, message: error.message });
         });
 
     }
@@ -276,7 +276,7 @@ class firebaseServices {
                 return url;
             })
             .catch(error => {
-                callback && callback({ isSuccess: false, response: null, message: error });
+                callback && callback({ isSuccess: false, response: null, message: error.message });
                 console.log(error);
             });
     }
@@ -306,7 +306,7 @@ class firebaseServices {
         firebaseRef.add(order).then(response => {
             callback({ isSuccess: true, response: null, message: "New order created Successfully" });
         }).catch(error => {
-            callback({ isSuccess: false, response: null, message: error });
+            callback({ isSuccess: false, response: null, message: error.message });
         });
     }
 
@@ -345,7 +345,7 @@ class firebaseServices {
             .then(response => {
                 callback({ isSuccess: true, response: null, message: "Order updated Successfully" });
             }).catch(error => {
-                callback({ isSuccess: false, response: null, message: error });
+                callback({ isSuccess: false, response: null, message: error.message });
             });
     }
 
@@ -357,7 +357,7 @@ class firebaseServices {
         firebaseRef.add(commentData).then(response => {
             callback({ isSuccess: true, response: null, message: "Thank you for your review" });
         }).catch(error => {
-            callback({ isSuccess: false, response: null, message: error });
+            callback({ isSuccess: false, response: null, message: error.message });
         });
     }
 
@@ -366,7 +366,7 @@ class firebaseServices {
         collection.get().then(snapshot => {
             callback({ isSuccess: true, response: snapshot, message: "Data collected successfully" });
         }).catch(error => {
-            callback({ isSuccess: false, response: null, message: error });
+            callback({ isSuccess: false, response: null, message: error.message });
         });
     }
 
