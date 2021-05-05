@@ -190,14 +190,14 @@ android {
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation 'com.android.support:multidex:2.0.1'
-    implementation "com.facebook.react:react-native:0.20.1"  // From node_modules
-    implementation "com.google.android.gms:play-services-base:17.5.0"
+    implementation "com.facebook.react:react-native:+"  // From node_modules
+    implementation "com.google.android.gms:play-services-base:17.6.0"
     implementation project(path: ":@react-native-firebase_app")
     implementation project(path: ":@react-native-firebase_auth")
     implementation project(':@react-native-firebase_firestore')
     implementation project(path: ":@react-native-firebase_messaging")
     implementation project(path: ":@react-native-firebase_storage")
-    implementation 'me.leolin:ShortcutBadger:1.1.21@aar' // <-- Add this line if you wish to use badge on Android
+    implementation 'me.leolin:ShortcutBadger:1.1.22@aar' // <-- Add this line if you wish to use badge on Android
 
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/";

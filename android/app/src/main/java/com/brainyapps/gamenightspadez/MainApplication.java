@@ -4,25 +4,12 @@ import android.content.Context;
 import androidx.multidex.MultiDexApplication;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
+import com.agontuk.RNFusedLocation.RNFusedLocationPackage;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-
-// Add For Firebase Integration
-/* import io.invertase.firebase.storage.ReactNativeFirebaseStoragePackage;
-import io.invertase.firebase.messaging.ReactNativeFirebaseMessagingPackage;
-import io.invertase.firebase.firestore.ReactNativeFirebaseFirestorePackage;
-import io.invertase.firebase.auth.ReactNativeFirebaseAuthPackage;
-import io.invertase.firebase.app.ReactNativeFirebaseAppPackage;
-///import io.invertase.firebase.dynamiclinks.ReactNativeFirebaseDynamicLinksPackage; */
-
-// import io.invertase.firebase.messaging.RNFirebaseMessagingPackage;
-// import io.invertase.firebase.firestore.RNFirebaseFirestorePackage; // <-- Add this line
-// import io.invertase.firebase.auth.RNFirebaseAuthPackage; // <-- Add this line
-// import io.invertase.firebase.notifications.RNFirebaseNotificationsPackage; // <-- Add this line
-// import io.invertase.firebase.storage.RNFirebaseStoragePackage; // <-- Add this line
 
 public class MainApplication extends MultiDexApplication implements ReactApplication {
 
@@ -38,24 +25,6 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
         protected List<ReactPackage> getPackages() {
           @SuppressWarnings("UnnecessaryLocalVariable")
           List<ReactPackage> packages = new PackageList(this).getPackages();
-          // Packages that cannot be autolinked yet can be added manually here, for example:
-          // packages.add(new MyReactNativePackage());
-
-          // Add For Firebase Linking
-          /*packages.add(new ReactNativeFirebaseAppPackage());
-          packages.add(new ReactNativeFirebaseAuthPackage());
-          packages.add(new ReactNativeFirebaseMessagingPackage());
-          packages.add(new ReactNativeFirebaseFirestorePackage());
-          packages.add(new ReactNativeFirebaseStoragePackage());*/
-          ///packages.add(new ReactNativeFirebaseDynamicLinksPackage());
-
-          // packages.add(new RNFirebaseMessagingPackage());
-          // packages.add(new RNFirebaseFirestorePackage());
-          // packages.add(new RNFirebaseAuthPackage());
-          // packages.add(new RNFirebaseNotificationsPackage());
-          // packages.add(new RNFirebaseStoragePackage());
-
-
           return packages;
         }
 
