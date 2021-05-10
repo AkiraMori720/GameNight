@@ -24,12 +24,11 @@ const initialState = {
     isFirstUser: true,
     avatarId: 3,
     avatars: [images.ic_bear, images.ic_bird, images.ic_avatar0, images.ic_avatar_boy],
-    skinColor:   'color1',
-    accessory:   'option1',
-    nailColor:   'option1',
-    handTattoo:  'option1',
-    spadezDeck:  'option1',
-    spadezTable: 'option1',
+    skinColor: 1,
+    nailColor: 1,
+    accessory: 'bracelet',
+    spadezDeck: 'red',
+    spadezTable: 1,
   }
 };
 

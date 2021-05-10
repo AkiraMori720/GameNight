@@ -49,11 +49,11 @@ const handleLoginSuccess = function* handleLoginSuccess({ data }) {
 };
 
 const handleLogout = function* handleLogout({}) {
-	yield AsyncStorage.removeItem('email');
-	yield AsyncStorage.removeItem('password');
+	yield AsyncStorage.removeItem('authProvider');
+	yield AsyncStorage.removeItem('credential');
 	yield AsyncStorage.removeItem('USER');
 	yield put(appStart({root : ROOT_OUTSIDE}));
-	setTimeout(() => Navigation.navigate('Login'), 100);
+	//setTimeout(() => Navigation.navigate('Login'), 100);
 };
 
 const root = function* root() {

@@ -27,17 +27,16 @@ class firebaseServices {
         auth()
             .signInWithCredential(googleCredential)
             // .signInWithPopup(provider)
-            .then(res => {
-                const token = "";///res.credential.accessToken;
-                const user = res.user
-                self.getProfileForUser(user, (response) => {
-                    if (response.isSuccess) {
-                        callback && callback({ isSuccess: true, response })
-                    }
-                    else {
-                        self.setProfileForUser(user, token, callback)
-                    }
-                })
+            .then(async (res) => {
+                const token = (await auth().currentUser.getIdTokenResult()).token;///res.credential.accessToken;
+                const user = Object.assign({}, res.user);
+                let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
+                console.log('google user', user._user, snapshot.data(), token);
+                if (snapshot && snapshot.data()) {
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                } else {
+                    self.setProfileForUser(user, token, callback)
+                }
                 // callback({ isSuccess: true, token, user })
                 // AsyncStorage.setItem('google_token', token)
             })
@@ -72,17 +71,16 @@ class firebaseServices {
         auth()
             .signInWithCredential(facebookCredential)
             // .signInWithPopup(provider)
-            .then(function (res) {
-                var token = "";////res.credential.accessToken;
-                var user = res.user;
-                self.getProfileForUser(user, (response) => {
-                    if (response.isSuccess) {
-                        callback && callback({ isSuccess: true, response })
-                    }
-                    else {
-                        self.setProfileForUser(user, token, callback)
-                    }
-                })
+            .then(async (res) => {
+                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
+                const user = res.user;
+                let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
+                console.log('facebook user', user._user, snapshot.data(), token);
+                if (snapshot && snapshot.data()) {
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                } else {
+                    self.setProfileForUser(user, token, callback)
+                }
                 // callback({ isSuccess: true, token, user })
             }).catch(function (error) {
                 callback && callback({ isSuccess: false, response: null, message: error.message });
@@ -102,8 +100,9 @@ class firebaseServices {
     signUpWithEmailAndPassword(email, password, callback) {
         auth()
             .createUserWithEmailAndPassword(email, password)
-            .then(user => {
-                this.setProfileForUser(user, null, callback);
+            .then(async (user) => {
+                const token = (await auth().currentUser.getIdTokenResult()).token;
+                this.setProfileForUser(user.user, token, callback);
                 return user;
                 // callback({isSuccess: true, user: user.user});// user.user;
             })
@@ -113,14 +112,53 @@ class firebaseServices {
     }
 
     loginWithEmailPass(email, password, callback) {
+        const credential = auth.EmailAuthProvider.credential(email, password);
         auth()
-            .signInWithEmailAndPassword(email, password)
-            .then(user => {
-                this.getProfileForUser(user.user, callback);
+            .signInWithCredential(credential)
+            .then(async (res) => {
+                let user = res.user;
+                let snapshot = await firestore().collection("userProfile").doc(user.uid).get();
+                console.log('EmailPassword user', user, snapshot.data(), credential);
+                if(snapshot && snapshot.data()) {
+                    callback({isSuccess: true, response: snapshot.data(), message: "successfully"});
+                } else {
+                    callback({isSuccess: false, response: null, message: "Profile is empty"});
+                }
                 return user;
                 // callback({isSuccess: true, user: user.user});// user.user;
             })
             .catch(error => {
+                callback && callback({ isSuccess: false, response: null, message: error.message });
+            });
+    }
+
+    loginWithCredential(provider, token, callback) {
+        let credential = null;
+
+        switch (provider){
+            case 'google':
+                credential = auth.GoogleAuthProvider.credential(token);
+                break;
+            case 'facebook':
+                credential = auth.FacebookAuthProvider.credential(token);
+                break;
+        }
+
+        auth()
+            .signInWithCredential(credential)
+            .then(async (res) => {
+                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
+                const user = res.user;
+                let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
+                console.log('oauth user', user._user, snapshot.data(), token);
+                if (snapshot && snapshot.data()) {
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                } else {
+                    self.setProfileForUser(user, token, callback)
+                }
+                // callback({ isSuccess: true, token, user })
+            })
+            .catch(function (error) {
                 callback && callback({ isSuccess: false, response: null, message: error.message });
             });
     }
@@ -150,28 +188,27 @@ class firebaseServices {
 
     setProfileForUser(user/*,email,fcmToken*/, token, callback) {
         const user_profile = {
-            user: user.user._user,
-            userid: user.user.uid,
+            user: user._user,
+            userid: user._user.uid,
             token: token,
             disabled: false,
             avatarId: 0,
             crewCount: 0,
             avatars: [],
-            skinColor: 'color1',
-            accessory: 'option1',
-            nailColor: 'option1',
-            handTattoo: 'option1',
-            spadezDeck: 'option1',
-            spadezTable: 'option1',
+            skinColor: 1,
+            nailColor: 1,
+            accessory: 'bracelet',
+            spadezDeck: 'red',
+            spadezTable: 1,
             createAt: moment().valueOf()
         };
 
         firestore()
             .collection("userProfile")
-            .doc(user.user.uid)
+            .doc(user._user.uid)
             .set(user_profile)
             .then(response => {
-                callback && callback({ isSuccess: true, response : user_profile, message: "Profile created successfully successfully" });
+                callback && callback({ isSuccess: true, response : user_profile, token, message: "Profile created successfully successfully" });
                 //callback && callback({ isSuccess: true, response: response.data(), message: "Profile created successfully successfully" });
             }).catch(error => {
                 callback && callback({ isSuccess: false, message: error.message });
@@ -192,7 +229,13 @@ class firebaseServices {
     getProfileForUser = (user, callback) => {
         firestore().collection("userProfile").doc(user.uid).get()
             .then((snapshot) => {
-                callback && callback({ isSuccess: true, response: snapshot.data(), message: "successfully" });
+                if(callback){
+                    if(snapshot && snapshot.data()) {
+                        callback({isSuccess: true, response: snapshot.data(), message: "successfully"});
+                    } else {
+                        callback({isSuccess: false, response: null, message: "Profile is empty"});
+                    }
+                }
             })
             .catch((error) => {
                 callback && callback({ isSuccess: false, response: null, message: error.message });

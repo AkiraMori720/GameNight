@@ -28,25 +28,50 @@ class OnBoarding extends Component {
 
     continue = async () => {
         const { appStart, loginSuccess, logout } = this.props;
-        const email =  await AsyncStorage.getItem('email');
-        const password = await AsyncStorage.getItem('password');
+        const provider =  await AsyncStorage.getItem('authProvider');
+        const credential = await AsyncStorage.getItem('credential');
         this.setState({loading: true});
-        if(email && password){
-            apiService.loginWithEmailPass(email, password, async (res) => {
-                if (res.isSuccess) {
-                    if (res.response && !res.response.disabled) {
-                        console.log('email password', res.response);
-                        loginSuccess(res.response);
-                        return;
-                    }
+        if(provider && credential){
+            let authCredential = JSON.parse(credential);
+            if(provider === 'email'){
+                if(authCredential.email && authCredential.password){
+                    apiService.loginWithEmailPass(authCredential.email, authCredential.password, async (res) => {
+                        if (res.isSuccess) {
+                            if (res.response && !res.response.disabled) {
+                                console.log('email auth', res.response);
+                                loginSuccess(res.response);
+                                this.setState({loading: false});
+                                return;
+                            }
+                        }
+                        logout();
+                        this.setState({loading: false});
+                    });
+                    return;
                 }
-                logout();
-                this.setState({loading: false});
-            });
-        } else {
-            appStart({root:ROOT_OUTSIDE});
-            this.setState({loading: false});
+            } else {
+                if(authCredential.token){
+                    apiService.loginWithCredential(provider, authCredential.token, async (res) => {
+                        if (res.isSuccess) {
+                            if (res.response && !res.response.disabled) {
+                                console.log('oauth', res);
+                                await AsyncStorage.setItem('authProvider', provider);
+                                await AsyncStorage.setItem('credential', JSON.stringify({ token: res.token }));
+
+                                loginSuccess(res.response);
+                                this.setState({loading: false});
+                                return;
+                            }
+                        }
+                        logout();
+                        this.setState({loading: false});
+                    });
+                }
+            }
         }
+
+        appStart({root:ROOT_OUTSIDE});
+        this.setState({loading: false});
     }
 
     render() {

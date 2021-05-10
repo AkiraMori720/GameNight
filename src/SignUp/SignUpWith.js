@@ -9,6 +9,7 @@ import { connect } from 'react-redux'
 import {showToast} from "../common/info";
 import apiService from "../firebase/FirebaseHelper";
 import {loginSuccess as loginSuccessAction, logout as logoutAction} from "../actions/login";
+import AsyncStorage from "@react-native-community/async-storage";
 
 class SignUpWith extends React.Component {
 
@@ -20,6 +21,8 @@ class SignUpWith extends React.Component {
                     logout()
                 }
                 else {
+                    await AsyncStorage.setItem('authProvider', 'facebook');
+                    await AsyncStorage.setItem('credential', JSON.stringify({ token: res.token }));
                     loginSuccess(res.response);
                 }
             } else {
@@ -29,15 +32,16 @@ class SignUpWith extends React.Component {
         })
     }
 
-    signInwithGoogle = async () => {
+    signInwithGoogle = () => {
         const { loginSuccess, logout } = this.props;
-        await apiService.signinWithGoogle((res) => {
+        apiService.signinWithGoogle(async (res) => {
             if (res.isSuccess) {
-                console.log('google auth', res);
                 if (res.response && res.response.disabled) {
                     logout()
                 }
                 else {
+                    await AsyncStorage.setItem('authProvider', 'google');
+                    await AsyncStorage.setItem('credential', JSON.stringify({ token: res.token }));
                     loginSuccess(res.response);
                 }
             } else {

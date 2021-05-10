@@ -40,13 +40,10 @@ class Login extends React.Component {
             apiService.loginWithEmailPass(email, password, async (res) => {
                 if (res.isSuccess) {
                     if (res.response && !res.response.disabled) {
-                        console.log('remember', this.state.remember);
                         if(this.state.remember){
-                            await AsyncStorage.setItem('email', email);
-                            await AsyncStorage.setItem('password', password);
-                            console.log('email password stored', email, password);
+                            await AsyncStorage.setItem('authProvider', 'email');
+                            await AsyncStorage.setItem('credential', JSON.stringify({ email, password }));
                         }
-
                         loginSuccess(res.response);
                     } else {
                         showToast('This user was disabled!');

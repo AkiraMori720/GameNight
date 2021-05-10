@@ -83,7 +83,8 @@ class Setting extends React.Component {
     }
 
     _navigate ()   {
-        const { logout } = this.props;
+        const { logout, navigation } = this.props;
+        navigation.popToTop();
         logout();
     };
 
