@@ -67,10 +67,7 @@ export default function login(state = initialState, action) {
     case types.USER.SET:
       return {
         ...state,
-        profile: {
-          ...state.profile,
-          ...action.user
-        }
+        profile: action.user
       };
     default:
       return state;

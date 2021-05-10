@@ -26,14 +26,18 @@ import {showToast} from "../common/info";
 class UserProfile extends React.Component {
     constructor(props) {
         super(props);
+        this.mounted = false;
         this.state = {
+            characters: [],
+            character: {},
+            characterSelectedId: null,
             age: 22,
         }
         this.setCharacter();
     };
 
     componentDidMount() {
-        debugger;
+        this.mounted = true;
         const { auth, updatePreferenceStore } = this.props;
         const { userid } = auth;
 
@@ -49,12 +53,21 @@ class UserProfile extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        this.setCharacter();
+        if(prevProps.auth !== this.props.auth){
+            this.setCharacter();
+        }
     }
 
     setCharacter = () => {
         const { characterSelectedId, characters } = this.props.auth;
-        this.character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
+        let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
+        if(this.mounted){
+            this.setState({ characters, character, characterSelectedId });
+        } else{
+            this.state.characters = characters;
+            this.state.character = character;
+            this.state.characterSelectedId = characterSelectedId;
+        }
     }
 
     onEditPlayer = () => {
@@ -63,7 +76,8 @@ class UserProfile extends React.Component {
 
     selectAvatar = (characterId) => {
         const { auth, setUser, navigation } = this.props;
-        if(auth.characterSelectedId === characterId){
+        const { characterSelectedId } = this.state;
+        if(characterSelectedId === characterId){
             return;
         }
         apiService.updateProfileForUser(auth.user,{characterSelectedId: characterId}, (res) => {
@@ -81,9 +95,39 @@ class UserProfile extends React.Component {
         this.props.navigation.navigate('EditProfile');
     };
 
+    onEditCharacter = () => {
+        let profile = this.state.character;
+        this.props.navigation.navigate('EditAvatar', {profile});
+    }
+
+    onRemoveCharacter = () => {
+        const { auth, setUser } = this.props;
+        const { characterSelectedId, characters } = this.state;
+
+        let newCharacters = characters.filter(item => item.id !== characterSelectedId);
+        let newSelectedId = null;
+        if(newCharacters.length !== 0){
+            newSelectedId = newCharacters[0].id;
+        }
+
+        apiService.updateProfileForUser(auth.user, { characterSelectedId: newSelectedId, characters: newCharacters }, (res) => {
+            if(res.isSuccess){
+                AsyncStorage.setItem('USER', JSON.stringify(res.response));
+                setUser(res.response);
+                if(newCharacters.length === 0){
+                    this.props.navigation.navigate('EditProfile');
+                }
+                showToast('Profile is removed successfully');
+            } else {
+                showToast('Removing Profile Failed!');
+            }
+        });
+
+    }
+
     render() {
-        const { characterSelectedId, characters } = this.props.auth;
-        const characterAvatar = getCharacterAvatar(this.character);
+        const { characterSelectedId, characters, character } = this.state;
+        const characterAvatar = getCharacterAvatar(character);
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
@@ -112,8 +156,8 @@ class UserProfile extends React.Component {
                             </TouchableOpacity>
                         </View>
                         <View style={styles.containerText}>
-                            <Text style={styles.textHeading}>{this.character.firstName + " " + this.character.lastName}</Text>
-                            <Text style={styles.text}>{this.character.location}</Text>
+                            <Text style={styles.textHeading}>{character.firstName + " " + character.lastName}</Text>
+                            <Text style={styles.text}>{character.location}</Text>
                         </View>
                     </View>
 
@@ -139,11 +183,10 @@ class UserProfile extends React.Component {
 
                             <View style={{ height: '17%', width: '80%', justifyContent: 'flex-end' }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', }}>
-
-                                    <TouchableOpacity>
+                                    <TouchableOpacity onPress={this.onEditCharacter}>
                                         <Image style={{ height: hp(4), width: wp(4.2), resizeMode: 'contain', tintColor: '#fff' }} source={images.ic_edit_2} />
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={{ marginLeft: '4%' }}>
+                                    <TouchableOpacity onPress={this.onRemoveCharacter} style={{ marginLeft: '4%' }}>
                                         <Image style={{ height: hp(4), width: wp(3.5), resizeMode: 'contain', tintColor: '#fff' }} source={images.ic_delete_2} />
                                     </TouchableOpacity>
                                 </View>

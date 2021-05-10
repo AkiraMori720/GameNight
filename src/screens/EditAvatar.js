@@ -26,11 +26,11 @@ class EditAvatar extends React.Component {
             lastName: profile?.lastName??'',
             location: profile?.location??'',
             gender: gender,
-            hair: 1,
-            eyerow: 1,
-            eye: 1,
-            nose: 1,
-            lip: 1,
+            hair: profile?.hair??1,
+            eyerow: profile?.eyerow??1,
+            eye: profile?.eye??1,
+            nose: profile?.nose??1,
+            lip: profile?.lip??1,
             profileProps: gender === GENDER_FEMALE?FEMALE_PROFILE_PROPS:MALE_PROFILE_PROPS,
             loading: false
         }
@@ -60,25 +60,34 @@ class EditAvatar extends React.Component {
             lip
         };
 
-        let characters = auth?.characters??[];
-        if(id && characters.find(item => item.id === id)){
-            characters = characters.filter(item => item.id !== id);
-        }
 
         let characterSelectedId = auth.characterSelectedId;
         if(!character.id){
             character.id = random(13);
             characterSelectedId = character.id;
         }
-        characters.push(character);
+
+        let characters = auth?.characters??[];
+        let existed = false;
+        characters = characters.map(item => {
+            if(item.id === character.id){
+                existed = true;
+                return character;
+            }
+            return item;
+        });
+
+        if(!existed){
+            characters.push(character);
+        }
 
         this.setState({ loading: true });
 
         apiService.updateProfileForUser(auth.user, { characterSelectedId, characters }, (res) => {
             if (res.isSuccess) {
-                console.log('updateProfile', res.response);
-                AsyncStorage.setItem('USER', JSON.stringify(res.response));
-                setUser(res.response);
+                let user = Object.assign({}, res.response);
+                AsyncStorage.setItem('USER', JSON.stringify(user));
+                setUser(user);
                 showToast('Profile is saved Successfully');
                 this.props.navigation.navigate('UserProfile');
             } else {

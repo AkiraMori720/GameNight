@@ -9,6 +9,7 @@ import { connect } from 'react-redux'
 import {
     setPreferences as setPreferencesAction,
 } from '../actions/preference'
+import {appStart as appStartAction, ROOT_ONBOARD} from "../actions/app";
 
 class GameType extends React.Component {
     
@@ -81,7 +82,7 @@ class GameType extends React.Component {
                         const typeId = type.typeId
                         const name = type.name
                         return (
-                            <TouchableOpacity key={typeId} onPress={() => this.selectGameType(typeId)}>
+                            <TouchableOpacity style={{ paddingVertical: hp(1) }} key={typeId} onPress={() => this.selectGameType(typeId)}>
                                 <Text style={styles.collapseBodyText}>{name}</Text>
                             </TouchableOpacity>
                         )
@@ -106,6 +107,11 @@ class GameType extends React.Component {
         const { userid } = this.props.auth
         setPreferences({userId: userid, preferences: {gameType: selected_game_type, privateMatch: true}});
         this.props.navigation.navigate('GameStyle');
+    }
+
+    onGotoBoard = () => {
+        const { appStart } = this.props;
+        appStart({root: ROOT_ONBOARD});
     }
 
     render() {
@@ -144,7 +150,7 @@ class GameType extends React.Component {
                         </View>
                         <View style={{marginTop:'2.5%'}}>
                         <SimpleButton
-                            onPress={() => this.props.navigation.navigate('OnBoarding')}
+                            onPress={this.onGotoBoard}
                             title={'LEADERBOARDS'}/>
                         </View>
                         <View style={{marginTop:'2.5%'}}>
@@ -212,12 +218,10 @@ const styles= StyleSheet.create({
         backgroundColor:'#460000',
         paddingLeft:'7%',
         paddingTop:'0%',
-        marginTop: '2%',
-        height: hp(12),
+        marginTop: '2%'
     },
     collapseBodyText:{
         color:'#fff',
-        paddingTop:'2%',
         // fontSize: wp(3.8),
         fontSize:wp(4.5),
         fontFamily: 'Montserrat-Regular',
@@ -225,6 +229,7 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
+    appStart: params => dispatch(appStartAction(params)),
     setPreferences: (params) => dispatch(setPreferencesAction(params)),
     dispatch
 })
