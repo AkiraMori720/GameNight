@@ -3,12 +3,12 @@ import {View,Text,StyleSheet,TextInput,TouchableOpacity,Image,SafeAreaView} from
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
-import SimpleButton from '../common/SimpleButton';
 import IconButton from '../common/IconButton';
 import { connect } from 'react-redux'
 import {
-    setPreferences,
+    setPreferences as setPreferencesAction,
 } from '../actions/preference'
+import { logout as logoutAction} from '../actions/login';
 
 const gameStyes = [
     {
@@ -34,10 +34,8 @@ class GameStyle extends React.Component {
         const preferences = { gameStyle }
         const { userid } = this.props.auth
         
-        this.props.setPreferences(userid, preferences)
-            .then(() => {
-                this.props.navigation.navigate('GameLobby')
-            })
+        this.props.setPreferences({userId: userid, preferences});
+        this.props.navigation.navigate('GameLobby');
     }
 
     renderStyleButtons () {
@@ -135,14 +133,14 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    setPreferences: (userid, preferences) => dispatch(setPreferences(userid, preferences)),
-    logout: (value) => dispatch(logout(value)),
+    setPreferences: (params) => dispatch(setPreferencesAction(params)),
+    logout: () => dispatch(logoutAction()),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
     preference: state.preference,
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(GameStyle)

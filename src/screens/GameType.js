@@ -7,7 +7,7 @@ import images from '../../assets/images';
 import SimpleButton from '../common/SimpleButton';
 import { connect } from 'react-redux'
 import {
-    setPreferences,
+    setPreferences as setPreferencesAction,
 } from '../actions/preference'
 
 class GameType extends React.Component {
@@ -50,7 +50,10 @@ class GameType extends React.Component {
     }
 
     selectGameType = (typeId) => {
-        const { gameTypes } = this.state
+        const { gameTypes } = this.state;
+        const { setPreferences } = this.props;
+        const { userid } = this.props.auth
+
         let selected_type_id = 0
         gameTypes.forEach((t, idx) => {
             if (t.typeId === typeId) {
@@ -59,17 +62,13 @@ class GameType extends React.Component {
         });
 
         const preferences = { gameType: this.state.gameTypes[selected_type_id].typeId }
-        const { userid } = this.props.auth
-        
-        this.props.setPreferences(userid, preferences)
-            .then(() => {
-                this.setState({
-                    selected_type_id,
-                    collapsed: false
-                })
-            })
 
-        
+        setPreferences({userId: userid, preferences});
+
+        this.setState({
+                selected_type_id,
+                collapsed: false
+            });
     }
 
     renderGameTypeLists = () => {
@@ -96,23 +95,17 @@ class GameType extends React.Component {
         const selected_type_id = this.state.selected_type_id
         const selected_game_type = this.state.gameTypes[selected_type_id].typeId
         const { userid } = this.props.auth
-        this.props.setPreferences(userid, { gameType: selected_game_type, privateMatch: false })
-            .then(() => {
-                this.props.navigation.navigate('GameStyle')
-            })
-            .catch((err) => {
-                console.log('error: ', err)
-            })
+        this.props.setPreferences({userId: userid, preferences: {gameType: selected_game_type, privateMatch: false}});
+        this.props.navigation.navigate('GameStyle');
     }
 
     onPrivateMatchButtonClicked = () => {
         const selected_type_id = this.state.selected_type_id
         const selected_game_type = this.state.gameTypes[selected_type_id]
+        const { setPreferences } = this.props;
         const { userid } = this.props.auth
-        this.props.setPreferences(userid, { gameType: selected_game_type, privateMatch: true })
-            .then(() => {
-                this.props.navigation.navigate('GameStyle')
-            })
+        setPreferences({userId: userid, preferences: {gameType: selected_game_type, privateMatch: true}});
+        this.props.navigation.navigate('GameStyle');
     }
 
     render() {
@@ -232,13 +225,13 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    setPreferences: (userid, preferences) => dispatch(setPreferences(userid, preferences)),
+    setPreferences: (params) => dispatch(setPreferencesAction(params)),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
     preference: state.preference,
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(GameType)

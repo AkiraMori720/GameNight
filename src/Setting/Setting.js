@@ -1,14 +1,15 @@
 import React from 'react';
-import {View, Text, StyleSheet, TextInput, TouchableOpacity, Image, FlatList, Modal} from 'react-native';
+import {View, StyleSheet, FlatList} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import SettingLink from './SettingLink';
 
-import {NavigationActions, StackActions} from "react-navigation";
 import Header from '../common/Header';
 import images from '../../assets/images';
 import IconButton from '../common/IconButton';
+import {logout as logoutAction} from "../actions/login";
+import {connect} from "react-redux";
 
-export default class Setting extends React.Component {
+class Setting extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -82,11 +83,8 @@ export default class Setting extends React.Component {
     }
 
     _navigate ()   {
-        const navigateAction = StackActions.reset({
-            index: 0,
-            actions: [NavigationActions.navigate({routeName:'SignWith'})]
-        });
-        this.props.navigation.dispatch(navigateAction);
+        const { logout } = this.props;
+        logout();
     };
 
     _settingLink = item => {
@@ -122,6 +120,12 @@ export default class Setting extends React.Component {
         );
     }
 }
+
+const mapDispatchToProps = (dispatch) => ({
+    logout: () => dispatch(logoutAction())
+})
+
+export default connect(null, mapDispatchToProps)(Setting);
 
 const styles= StyleSheet.create({
     mainContainer: {

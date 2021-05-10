@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
 import { StyleSheet, FlatList, Text, View, TouchableOpacity,Image,ImageBackground } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
-import {NavigationActions, StackActions} from "react-navigation";
+import {CommonActions, StackActions} from "@react-navigation/native";
 import SideMenuHeader from './SideMenuHeader';
 import DrawerItem from './DrawerItem';
 import images from "../../assets/images";
+import {logout as logoutAction} from "../actions/login";
+import {connect} from "react-redux";
 
-
-
-
-export default class SideMenu extends Component {
+class SideMenu extends Component {
 
     constructor(props)
     {
@@ -86,11 +85,8 @@ export default class SideMenu extends Component {
     }
 
     _navigate ()   {
-        const navigateAction = StackActions.reset({
-            index: 0,
-            actions: [NavigationActions.navigate({routeName: 'Login'})]
-        });
-        this.props.navigation.dispatch(navigateAction);
+        const { logout } = this.props;
+        logout();
     };
 
 
@@ -126,6 +122,12 @@ export default class SideMenu extends Component {
         );
     }
 }
+
+const mapDispatchToProps = (dispatch) => ({
+    logout: () => dispatch(logoutAction())
+})
+
+export default connect(null, mapDispatchToProps)(SideMenu);
 
 const styles = StyleSheet.create({
 

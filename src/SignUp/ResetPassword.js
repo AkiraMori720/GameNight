@@ -6,6 +6,7 @@ import images from "../../assets/images";
 import InputComponent from "../common/InputComponent";
 import SimpleButton from "../common/SimpleButton";
 import apiService from '../firebase/FirebaseHelper'
+import {showToast} from "../common/info";
 
 export default class ResetPassword extends React.Component {
     constructor(props) {
@@ -13,7 +14,8 @@ export default class ResetPassword extends React.Component {
         this.state = {
             showAlert: false,
             email: '',
-            isValidEmail: false
+            isValidEmail: false,
+            loading: false
         }
     };
 
@@ -24,23 +26,27 @@ export default class ResetPassword extends React.Component {
 
     accept() {
         this.togglePrivacyAlertModal();
-        this.props.navigation.navigate('NewPassword')
+        // Not Change Password Without Login
+        //this.props.navigation.navigate('NewPassword')
+        this.props.navigation.navigate('Login')
     }
 
     sendEmail = () => {
         const { email, isValidEmail } = this.state
         if (isValidEmail) {
+            this.setState({ loading: true });
             apiService.sendEmailWithPassword(email, (res) => {
                 if (res.isSuccess) {
                     this.togglePrivacyAlertModal();
                 }
                 else {
-                    alert(res.message);
+                    showToast(res.message);
                 }
+                this.setState({ loading: false });
             })
         }
         else {
-            alert('The email address is invalid!')
+            showToast('The email address is invalid!')
         }
     }
 
@@ -89,7 +95,7 @@ export default class ResetPassword extends React.Component {
 
 
     render() {
-        const { email } = this.state
+        const { email, loading } = this.state
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
@@ -105,7 +111,6 @@ export default class ResetPassword extends React.Component {
                                 inputRadius={wp(10)}
                                 bgColor={'#5c0801'}
                                 placeholder={'Email'}
-                                placeholderTextColor={'#fff'}
                                 value={email}
                                 onChangeText={value => this.setState({ email: value, isValidEmail: this.validateEmail(value) })}
                             />
@@ -122,7 +127,12 @@ export default class ResetPassword extends React.Component {
                         {this.renderPrivacyAlert()}
                     </Modal>
                     <View style={styles.viewBottom}>
-                        <SimpleButton onPress={this.sendEmail} btnHeight={hp(6)} textColor={'#000000'} title={'Reset Password'} />
+                        <SimpleButton
+                            onPress={this.sendEmail}
+                            btnHeight={hp(6)}
+                            textColor={'#000000'} title={'Reset Password'}
+                            loading={loading}
+                        />
                     </View>
                 </View>
             </SafeAreaView>

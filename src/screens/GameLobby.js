@@ -6,7 +6,7 @@ import images from '../../assets/images';
 import SimpleButton from '../common/SimpleButton';
 import { connect } from 'react-redux'
 import {
-    setPreferences,
+    setPreferences as setPreferencesAction,
 } from '../actions/preference'
 
 class GameLobby extends React.Component {
@@ -14,15 +14,13 @@ class GameLobby extends React.Component {
     onGameLobbyOptionSelected (gameLobby) {
         const preferences = { gameLobby };
         const { userid } = this.props.auth;
-        this.props.setPreferences(userid, preferences)
-            .then(() => {
-                if (this.props.preference.privateMatch) {
-                    this.props.navigation.navigate('SpadezCrew')
-                }
-                else {
-                    this.props.navigation.navigate('Original')
-                }
-            })
+        this.props.setPreferences({userId: userid, preferences});
+        if (this.props.preference.privateMatch) {
+            this.props.navigation.navigate('SpadezCrew')
+        }
+        else {
+            this.props.navigation.navigate('Original')
+        }
     }
 
     render() {
@@ -85,13 +83,13 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    setPreferences: (userid, preferences) => dispatch(setPreferences(userid, preferences)),
+    setPreferences: (params) => dispatch(setPreferencesAction(params)),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
     preference: state.preference,
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(GameLobby)

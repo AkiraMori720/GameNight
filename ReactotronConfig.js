@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { NativeModules } from 'react-native';
+import {LogBox, NativeModules} from 'react-native';
 import Reactotron from 'reactotron-react-native';
 import { reactotronRedux } from 'reactotron-redux';
 import sagaPlugin from 'reactotron-redux-saga';
@@ -19,5 +19,5 @@ if (__DEV__) {
     Reactotron.clear();
     console.warn = Reactotron.log;
     console.log = Reactotron.log;
-    console.disableYellowBox = true;
+    LogBox.ignoreAllLogs(true);
 }

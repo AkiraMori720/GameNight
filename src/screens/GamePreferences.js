@@ -5,7 +5,7 @@ import Header from '../common/Header';
 import images from '../../assets/images';
 import { connect } from 'react-redux';
 import {
-    setPreferences,
+    setPreferences as setPreferencesAction,
 } from '../actions/preference';
 
 
@@ -33,7 +33,7 @@ class GamePreferences extends React.Component {
         const preferences = { gameType }
         const { userid } = this.props.auth
         
-        this.props.setPreferences(userid, preferences)
+        this.props.setPreferences({userId: userid, preferences})
             .then(() => {
                 this.setState({
                     gameType
@@ -45,7 +45,7 @@ class GamePreferences extends React.Component {
         const preferences = { soloPoints }
         const { userid } = this.props.auth
         
-        this.props.setPreferences(userid, preferences)
+        this.props.setPreferences({userId: userid, preferences})
             .then(() => {
                 this.setState({
                     soloPoints
@@ -57,7 +57,7 @@ class GamePreferences extends React.Component {
         const preferences = { partnerPoints }
         const { userid } = this.props.auth
         
-        this.props.setPreferences(userid, preferences)
+        this.props.setPreferences({userId: userid, preferences})
             .then(() => {
                 this.setState({
                     partnerPoints
@@ -246,13 +246,13 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    setPreferences: (userid, preferences) => dispatch(setPreferences(userid, preferences)),
+    setPreferences: (params) => dispatch(setPreferencesAction(params)),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
     preference: state.preference,
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(GamePreferences)

@@ -1,17 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ImageBackground, SafeAreaView } from 'react-native';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header from "../common/Header";
 import images from "../../assets/images";
 import InputComponent from "../common/InputComponent";
 import SimpleButton from "../common/SimpleButton";
-import TextButton from "../common/TextButton";
-import CheckBox from "../common/CheckBox";
 import TickCircle from "../common/TickCircle";
 import { connect } from 'react-redux';
-import {
-    updatePassword,
-} from '../actions/auth'
+import apiService from "../firebase/FirebaseHelper";
+import {showToast} from "../common/info";
+import { logout as logoutAction} from "../actions/login";
 
 
 class NewPassword extends React.Component {
@@ -21,19 +19,27 @@ class NewPassword extends React.Component {
 
         this.state = {
             newPassword: '',
-            confirmNewPassword: ''
+            confirmNewPassword: '',
+            loading: false
         }
     }
 
     updatePassword = () => {
-        const { newPassword, confirmNewPassword } = this.state
-        if (newPassword === confirmNewPassword) {
-            this.props.updatePassword(newPassword)
-                .then(() => {
-                    this.props.navigation.navigate('Login')
-                }).catch((err) => {
-                    console.log('error: ', err)
-                })
+        const { newPassword, confirmNewPassword } = this.state;
+        const { logout } = this.props;
+
+        if (newPassword.length > 0 && newPassword === confirmNewPassword) {
+            this.setState({loading: true});
+            apiService.updatePassword(newPassword, (res) => {
+                if (res.isSuccess) {
+                    logout();
+                    this.props.navigation.navigate('Login');
+                } else {
+                    console.log("password update error: ", res.message);
+                    showToast('Update Failed');
+                }
+                this.setState({loading: false});
+            })
         }
         else {
             alert('Please make sure your password match')
@@ -47,13 +53,13 @@ class NewPassword extends React.Component {
                     <Header onPress={() => this.props.navigation.goBack()} bgColor={'#250901'} headerBorderWidth={2} imgLeft={images.ic_back} title={'ENTER NEW PASSWORD'} />
                     <View style={styles.mainContainerBottom}>
                         <View style={{ marginBottom: wp(3) }}>
-                            <InputComponent inputPaddingLeft={wp(2)} inputHeight={hp(6)} inputWidth={wp(80)} inputRadius={wp(10)} bgColor={'#5c0801'} placeholder={'John'} placeholderTextColor={'#fff'} />
+                            <InputComponent inputPaddingLeft={wp(2)} inputHeight={hp(6)} inputWidth={wp(80)} inputRadius={wp(10)} bgColor={'#5c0801'} placeholder={'John'} />
                         </View>
                         <View style={{ marginBottom: wp(3) }}>
-                            <InputComponent inputPaddingLeft={wp(2)} inputHeight={hp(6)} inputWidth={wp(80)} inputRadius={wp(10)} bgColor={'#5c0801'} placeholder={'Smith'} placeholderTextColor={'#fff'} />
+                            <InputComponent inputPaddingLeft={wp(2)} inputHeight={hp(6)} inputWidth={wp(80)} inputRadius={wp(10)} bgColor={'#5c0801'} placeholder={'Smith'} />
                         </View>
                         <View style={{ marginBottom: wp(3) }}>
-                            <InputComponent inputPaddingLeft={wp(2)} inputHeight={hp(6)} inputWidth={wp(80)} inputRadius={wp(10)} bgColor={'#5c0801'} placeholder={'sample@email.com'} placeholderTextColor={'#fff'} />
+                            <InputComponent inputPaddingLeft={wp(2)} inputHeight={hp(6)} inputWidth={wp(80)} inputRadius={wp(10)} bgColor={'#5c0801'} placeholder={'sample@email.com'} />
                         </View>
                         <View style={{ marginBottom: wp(3) }}>
                             <InputComponent
@@ -67,7 +73,6 @@ class NewPassword extends React.Component {
                                 iconWidth={wp(3.5)}
                                 imgRight={images.ic_view_pass}
                                 placeholder={'New Password'}
-                                placeholderTextColor={'#fff'}
                                 value={this.state.newPassword}
                                 onChangeText={(newPassword) => this.setState({ newPassword })}
                             />
@@ -83,7 +88,6 @@ class NewPassword extends React.Component {
                             iconWidth={wp(3.5)}
                             imgRight={images.ic_view_pass}
                             placeholder={'Confirm New Password'}
-                            placeholderTextColor={'#fff'}
                             value={this.state.confirmNewPassword}
                             onChangeText={(confirmNewPassword) => this.setState({ confirmNewPassword })}
                         />
@@ -95,7 +99,13 @@ class NewPassword extends React.Component {
                         }
 
                         <View style={{ marginTop: hp(28) }}>
-                            <SimpleButton onPress={this.updatePassword} btnHeight={hp(6)} textColor={'#000000'} title={'SAVE CHANGES'} />
+                            <SimpleButton
+                                onPress={this.updatePassword}
+                                btnHeight={hp(6)}
+                                textColor={'#000000'}
+                                title={'SAVE CHANGES'}
+                                loading={this.state.loading}
+                            />
                         </View>
 
 
@@ -130,12 +140,12 @@ const styles = StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    updatePassword: (newpassword) => dispatch(updatePassword(newpassword)),
+    logout: () => dispatch(logoutAction()),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
-    auth: state.auth,
+    auth: state.login.profile,
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(NewPassword)

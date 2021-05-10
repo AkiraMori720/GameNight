@@ -1,15 +1,7 @@
 import {
-    UPDATE_PREFERENCE_STORE,
+    PREFERENCE,
 } from '../actions/types'
-
-const updatePreferenceStore = (state, action) => {
-    console.log('preference_store_payload_to: ', action.payload)
-    return Object.assign({}, state, action.payload)
-}
-
-const ACTION_HANDLERS = {
-    [UPDATE_PREFERENCE_STORE]: updatePreferenceStore
-}
+import * as types from "../actions/types";
 
 const initialState = {
     gameType: 'solo',
@@ -20,7 +12,16 @@ const initialState = {
     privateMatch: false
 }
 
-export default function preferenceReducer(state = initialState, action) {
-    const handler = ACTION_HANDLERS[action.type]
-    return handler ? handler(state, action) : state
+export default function preference(state = initialState, action) {
+    switch (action.type) {
+        case types.APP.INIT:
+            return initialState;
+        case types.PREFERENCE.SET:
+            return {
+                ...state,
+                ...action.data
+            };
+        default:
+            return state;
+    }
 }

@@ -176,7 +176,7 @@ const styles= StyleSheet.create({
 
 const mapStateToProps = (state) => ({
     preference: state.preference,
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps)(SpadezCrew)

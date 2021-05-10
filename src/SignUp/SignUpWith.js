@@ -6,31 +6,45 @@ import TextButton from "../common/TextButton";
 import images from "../../assets/images";
 import Header from "../common/Header";
 import { connect } from 'react-redux'
-import {
-    loginWithFacebook,
-    loginWithGoogle
-} from '../actions/auth'
+import {showToast} from "../common/info";
+import apiService from "../firebase/FirebaseHelper";
+import {loginSuccess as loginSuccessAction, logout as logoutAction} from "../actions/login";
 
 class SignUpWith extends React.Component {
 
     signInWithFacebook = () => {
-        this.props.loginWithFacebook()
-            .then(() => {
-                this.props.navigation.navigate('Introduction');
-                //this.props.navigation.navigate('UserProfile');
-            }).catch((err) => {
-                console.log('error: ', err)
-            })
+        const { loginSuccess, logout } = this.props;
+        apiService.signinWithFacebook(async (res) => {
+            if (res.isSuccess) {
+                if (res.response && res.response.disabled) {
+                    logout()
+                }
+                else {
+                    loginSuccess(res.response);
+                }
+            } else {
+                console.log("facebook signin error: ", res.message);
+                showToast('Login Failed!');
+            }
+        })
     }
 
-    signInwithGoogle = () => {
-        this.props.loginWithGoogle()
-            .then(() => {
-                this.props.navigation.navigate('Introduction');
-                //this.props.navigation.navigate('UserProfile');
-            }).catch((err) => {
-                console.log('error: ', err)
-            })
+    signInwithGoogle = async () => {
+        const { loginSuccess, logout } = this.props;
+        await apiService.signinWithGoogle((res) => {
+            if (res.isSuccess) {
+                console.log('google auth', res);
+                if (res.response && res.response.disabled) {
+                    logout()
+                }
+                else {
+                    loginSuccess(res.response);
+                }
+            } else {
+                console.log("google signin error: ", res.message);
+                showToast('Login Failed!');
+            }
+        })
     }
 
     render() {
@@ -119,14 +133,12 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    loginWithFacebook: () => dispatch(loginWithFacebook()),
-    loginWithGoogle: () => dispatch(loginWithGoogle()),
-    logout: () => dispatch(logout()),
-    dispatch
+    loginSuccess: (params) => dispatch(loginSuccessAction(params)),
+    logout: () => dispatch(logoutAction())
 })
 
 const mapStateToProps = (state) => ({
-    auth: state.auth,
+    auth: state.login.profile,
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(SignUpWith)

@@ -1,12 +1,12 @@
 import { combineReducers } from 'redux'
-import auth from './auth'
+import login from './login'
 import preference from './preference'
+import app from "./app";
 
 //{append_include_here}
 
-const rootReducer = combineReducers({
-  auth,
+export default combineReducers({
+  app,
+  login,
   preference
 });
-
-export default rootReducer;

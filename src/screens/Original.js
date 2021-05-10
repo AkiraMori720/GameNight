@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { connect } from 'react-redux'
-import PropTypes from 'prop-types'
-import { Modal, Picker, Animated, Easing, View, Text, StyleSheet,ImageBackground,  TextInput, TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
+import { Modal, Picker, Animated, Easing, View, Text, StyleSheet,ImageBackground,  TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { Collapse, CollapseHeader, CollapseBody, AccordionList } from 'accordion-collapse-react-native';
 import Header from '../common/Header';
 import images from '../../assets/images';
 import SimpleButton from '../common/SimpleButton';
@@ -30,12 +28,12 @@ class Original extends React.Component {
             teamId: -1,
             renigBook: {},
             renigId: -1,
-            roomid: props.navigation.getParam("roomid"),
-            fPrivate: props.navigation.getParam("fPrivate"),
-            gameType: props.navigation.getParam("type"),
-            gameStyle: props.navigation.getParam("style"),
-            gameLobby: props.navigation.getParam("lobby"),
-            winningScore: props.navigation.getParam("score")
+            roomid: props.route.params?.roomid,
+            fPrivate: props.route.params?.fPrivate,
+            gameType: props.route.params?.type,
+            gameStyle: props.route.params?.style,
+            gameLobby: props.route.params?.lobby,
+            winningScore: props.route.params?.score
         }
     }
 
@@ -44,7 +42,7 @@ class Original extends React.Component {
             (nextProps.preference !== undefined && this.props.auth !== undefined) ||
             (nextProps.preference !== undefined && nextProps.auth !== undefined))) {
             const mode = Math.floor(Math.random() * 2)
-            const randomMode = mode == 0 ? 'solo' : 'partner'
+            const randomMode = mode === 0 ? 'solo' : 'partner'
             const data = {
                 username: nextProps.auth.username,
                 userid: nextProps.auth.userid,
@@ -1170,7 +1168,7 @@ const mapDispatchToProps = (dispatch) => ({
 
 const mapStateToProps = (state) => ({
     preference: state.preference,
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(Original)

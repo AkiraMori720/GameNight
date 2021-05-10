@@ -1,5 +1,15 @@
 import React from 'react';
-import {View,Text,StyleSheet,TextInput,TouchableOpacity,Image,ImageBackground,SafeAreaView} from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    Image,
+    ImageBackground,
+    SafeAreaView,
+    ActivityIndicator
+} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import images from "../../assets/images";
 
@@ -20,6 +30,7 @@ export default class SimpleButton extends React.Component {
         let fontSize=this.props.fontSize || wp(4);
         let iconPaddingLeft=this.props.iconPaddingLeft;
         let iconPaddingRight=this.props.iconPaddingRight;
+        let loading = this.props.loading;
 
 
         return(
@@ -29,7 +40,8 @@ export default class SimpleButton extends React.Component {
                 borderRadius={50}
                 style={styles.container} source={images.button} >
                 <TouchableOpacity onPress={this.props.onPress} style={[styles.containerTouchable,{backgroundColor:bgColor},{width:btnWidth},{height:btnHeight},{borderRadius:btnRadius},{paddingLeft:iconPaddingLeft},{marginStart:btnMarginStart},{marginTop:btnMarginTop},{marginBottom:btnMarginBottom},{marginRight:btnMarginRight}]}>
-                    <Text style={[styles.text,{color:textColor},{fontSize:fontSize}]}>{this.props.title}</Text>
+                    {loading ? <ActivityIndicator color={textColor}/>
+                        : <Text style={[styles.text, {color: textColor}, {fontSize: fontSize}]}>{this.props.title}</Text>}
                 </TouchableOpacity>
             </ImageBackground>
             </SafeAreaView>

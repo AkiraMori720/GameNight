@@ -1,5 +1,5 @@
 import React from 'react';
-import {View,Text,StyleSheet,TextInput,TouchableOpacity,Image,ImageBackground,SafeAreaView} from 'react-native';
+import {View,StyleSheet,SafeAreaView} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Header from "../common/Header";
 import images from "../../assets/images";
@@ -8,9 +8,10 @@ import SimpleButton from "../common/SimpleButton";
 import TextButton from "../common/TextButton";
 import CheckBox from "../common/CheckBox";
 import { connect } from 'react-redux'
-import {
-    loginWithEmailAndPassword,
-} from '../actions/auth'
+import AsyncStorage from "@react-native-community/async-storage";
+import {showToast} from "../common/info";
+import apiService from "../firebase/FirebaseHelper";
+import {loginSuccess as loginSuccessAction, logout as logoutAction} from "../actions/login";
 
 class Login extends React.Component {
 
@@ -19,7 +20,9 @@ class Login extends React.Component {
 
         this.state = {
             email : '',
-            password: ''
+            password: '',
+            remember: false,
+            loading: false
         }
     }
 
@@ -30,23 +33,39 @@ class Login extends React.Component {
 
     signIn = () => {
         const { email, password, isValidEmail, isLeast6Char } = this.state;
+        const { loginSuccess } = this.props;
+
         if (isValidEmail && isLeast6Char) {
-            this.props.loginWithEmailAndPassword(email, password)
-                .then(() => {
-                    this.props.navigation.navigate('Introduction');
-                    //this.props.navigation.navigate('UserProfile')
-                })
-                .catch((err) => {
-                    console.log('signin error:', err);
-                })
+            this.setState({loading: true});
+            apiService.loginWithEmailPass(email, password, async (res) => {
+                if (res.isSuccess) {
+                    if (res.response && !res.response.disabled) {
+                        console.log('remember', this.state.remember);
+                        if(this.state.remember){
+                            await AsyncStorage.setItem('email', email);
+                            await AsyncStorage.setItem('password', password);
+                            console.log('email password stored', email, password);
+                        }
+
+                        loginSuccess(res.response);
+                    } else {
+                        showToast('This user was disabled!');
+                    }
+                } else {
+                    console.log("login error: ", res.message);
+                    showToast('The email and password is invalid!');
+                }
+                this.setState({loading: false});
+            })
         }
         else {
-            alert('The email and password is invalid!')
+            showToast('The email and password is invalid!');
+            this.setState({loading: false});
         }
     }
 
     render() {
-        const { email, password } = this.state
+        const { email, password, loading, remember } = this.state
         return(
             <SafeAreaView style={{flex:1}}>
             <View style={styles.mainContainer}>
@@ -61,7 +80,7 @@ class Login extends React.Component {
                             inputRadius={wp(10)}
                             bgColor={'#5c0801'}
                             placeholder={'Email'}
-                            placeholderTextColor={'#fff'}
+                            keyboardType="email-address"
                             value={email}
                             onChangeText={value => this.setState({ email: value, isValidEmail: this.validateEmail(value) })}
                         />
@@ -74,13 +93,17 @@ class Login extends React.Component {
                         inputRadius={wp(10)}
                         bgColor={'#5c0801'}
                         placeholder={'Password'}
-                        placeholderTextColor={'#fff'}
                         value={password}
-                        onChangeText={value => this.setState({password: value, isLeast6Char: value && value.length >= 6 ? true : false,})}
+                        onChangeText={value => this.setState({password: value, isLeast6Char: value && value.length >= 6})}
                     />
                     <View style={{flexDirection:'row',alignItems: 'center',marginTop:hp(1.5)}}>
                         <CheckBox
                             checkTitle={'Remember Me'}
+                            value={remember}
+                            onChange={value => {
+                                this.setState({ remember: value });
+                                console.log('this.remember', value);
+                            }}
                         />
                     </View>
                     <View style={{marginTop:wp(6)}}>
@@ -89,6 +112,7 @@ class Login extends React.Component {
                             btnHeight={hp(6)}
                             textColor={'#000000'}
                             title={'Login'}
+                            loading={loading}
                         />
                     </View>
                     <TextButton onPress={() => this.props.navigation.navigate('ResetPassword')} title={'Forgot Password?'}/>
@@ -122,13 +146,13 @@ const styles= StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    loginWithEmailAndPassword: (email, password) => dispatch(loginWithEmailAndPassword(email, password)),
-    logout: () => dispatch(logout()),
+    loginSuccess: (params) => dispatch(loginSuccessAction(params)),
+    logout: () => dispatch(logoutAction()),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
-    auth: state.auth,
+    auth: state.login.profile,
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(Login)

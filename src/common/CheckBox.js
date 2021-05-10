@@ -14,25 +14,25 @@ export default class CheckBox extends React.Component {
     }
 
     onRadioPress(){
+        let checked = false;
         if (this.state.radioButtonChecked){
             this.setState({radioButtonChecked:false})
         }else{
             this.setState({radioButtonChecked:true})
-        }}
+            checked = true;
+        }
+        if(this.props.onChange){
+            this.props.onChange(checked);
+        }
+    }
 
     render() {
         return(
             <View style={styles.mainContainer} >
-                <View style={styles.container}>
-
-                    <TouchableOpacity onPress={()=>this.onRadioPress()} style={styles.touchViewRadio}>
-                        {this.state.radioButtonChecked &&   <Image style={styles.img} source={images.ic_tick_box} />  }
-                    </TouchableOpacity>
-
-                    <View>
-                        <Text style={styles.text}>{this.props.checkTitle}</Text>
-                    </View>
-                </View>
+                <TouchableOpacity onPress={()=>this.onRadioPress()} style={styles.container}>
+                    <View style={styles.touchViewRadio}>{this.state.radioButtonChecked &&  <Image style={styles.img} source={images.ic_tick_box} /> }</View>
+                    <Text style={styles.text}>{this.props.checkTitle}</Text>
+                </TouchableOpacity>
             </View>
         );
     }

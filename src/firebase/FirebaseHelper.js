@@ -6,9 +6,9 @@ import storage from '@react-native-firebase/storage';
 import { LoginManager, AccessToken } from 'react-native-fbsdk';
 import { GoogleSignin } from '@react-native-community/google-signin';
 import moment from 'moment'
-import { AsyncStorage } from 'react-native'
-    GoogleSignin.configure({
-    webClientId: '',
+
+GoogleSignin.configure({
+    webClientId: '657946000234-6f1kng83oolvm5g5vcoe77intsvd67oj.apps.googleusercontent.com',
  });
 
 class firebaseServices {
@@ -16,7 +16,9 @@ class firebaseServices {
         let self = this;
 
         // Get the users ID token
-        const { idToken } = await GoogleSignin.signIn();
+        const { idToken } = await GoogleSignin.signIn().catch(e => {
+            console.log('Google Sign In error', e);
+        });
 
         // Create a Google credential with the token
         const googleCredential = auth.GoogleAuthProvider.credential(idToken);
@@ -147,9 +149,23 @@ class firebaseServices {
     }
 
     setProfileForUser(user/*,email,fcmToken*/, token, callback) {
-        const user_profile = {user: user.user._user, userid: user.user.uid, token: token, disabled: false, 
-            avatarId: 0, crewCount: 0, avatars: [], skinColor: 'color1', accessory: 'option1',nailColor: 'option1',
-            handTattoo: 'option1',spadezDeck: 'option1',spadezTable: 'option1',createAt: moment().valueOf()}
+        const user_profile = {
+            user: user.user._user,
+            userid: user.user.uid,
+            token: token,
+            disabled: false,
+            avatarId: 0,
+            crewCount: 0,
+            avatars: [],
+            skinColor: 'color1',
+            accessory: 'option1',
+            nailColor: 'option1',
+            handTattoo: 'option1',
+            spadezDeck: 'option1',
+            spadezTable: 'option1',
+            createAt: moment().valueOf()
+        };
+
         firestore()
             .collection("userProfile")
             .doc(user.user.uid)
@@ -160,12 +176,13 @@ class firebaseServices {
             }).catch(error => {
                 callback && callback({ isSuccess: false, message: error.message });
             });
-            return;
     }
 
     updateProfileForUser(user, profileData, callback) {
-        let firebaseRef = firestore().collection("userProfile").doc(user.uid)
-        firebaseRef.update(profileData).then(response => {
+        let firebaseRef = firestore().collection("userProfile").doc(user.uid);
+
+        firebaseRef.update(profileData).then(async() => {
+            let response = await firestore().collection("userProfile").doc(user.uid).get();
             callback && callback({ isSuccess: true, response: response.data(), message: "Profile updated successfully" });
         }).catch(error => {
             callback && callback({ isSuccess: false, response: null, message: error.message });
@@ -173,9 +190,10 @@ class firebaseServices {
     }
 
     getProfileForUser = (user, callback) => {
-        firestore().collection("userProfile").doc(user.uid).get().then((snapshot) => {
-            callback && callback({ isSuccess: true, response: snapshot.data(), message: "successfully" });
-        })
+        firestore().collection("userProfile").doc(user.uid).get()
+            .then((snapshot) => {
+                callback && callback({ isSuccess: true, response: snapshot.data(), message: "successfully" });
+            })
             .catch((error) => {
                 callback && callback({ isSuccess: false, response: null, message: error.message });
             });

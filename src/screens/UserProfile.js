@@ -1,100 +1,89 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, SafeAreaView, Modal } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    Image,
+    SafeAreaView,
+    Modal,
+    ScrollView
+} from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
-import { ScrollView } from 'react-navigation';
-import InputComponent from "../common/InputComponent";
-import AvatarCompo from '../common/AvatarCompo';
-import ImagePicker from 'react-native-image-picker';
 import { connect } from 'react-redux'
 import {
-    updateAuthInfo,
-    updateProfileForUser
-} from '../actions/auth'
-import {
-    getPreferences,
+    updatePreferenceStore as updatePreferenceStoreAction,
 } from '../actions/preference'
+import apiService from "../firebase/FirebaseHelper";
+import AsyncStorage from "@react-native-community/async-storage";
+import { setUser as setUserAction } from "../actions/login";
+import {getCharacterAvatar} from "../common/character";
+import {showToast} from "../common/info";
 
 class UserProfile extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            showProfileEditModal: false,
-            showAvatarAddModal: false,
-            username: 'PATRICIA MILLER',
             age: 22,
-            address: '121, Cherry Bridge, NY',
-            avatarId: 3,
-            avatars: [images.ic_bear, images.ic_bird, images.ic_avatar0, images.ic_avatar_boy]
         }
+        this.setCharacter();
     };
 
     componentDidMount() {
         debugger;
-        const { userid } = this.props.auth
+        const { auth, updatePreferenceStore } = this.props;
+        const { userid } = auth;
 
         // fetch user's preferences from firebase
-        this.props.getPreferences(userid)
-    }
-
-    accept() {
-        this.setState({ showProfileEditModal: false, showAvatarAddModal: false });
-        // this.props.navigation.navigate('Introduction')
-    }
-
-    cancel() {
-        this.setState({ showProfileEditModal: false, showAvatarAddModal: false });
-    }
-
-    term() {
-        this.setState({ showProfileEditModal: false, showAvatarAddModal: false });
-        // this.props.navigation.navigate('Terms')
-    }
-
-    privacy() {
-        this.setState({ showProfileEditModal: false, showAvatarAddModal: false });
-        // this.props.navigation.navigate('Privacy')
-    }
-
-    toggleProfileEditModal = () => {
-        this.props.navigation.navigate('EditProfile')
-        // this.setState({ showProfileEditModal: !this.state.showProfileEditModal });
-    };
-
-    selectAvatar = (idx) => {
-        this.props.updateProfileForUser({avatarId: idx})
-    }
-
-    toggleAvatarAddModal = () => {
-        // this.setState({ showAvatarAddModal: !this.state.showAvatarAddModal });
-        this.addAvatar();
-    };
-
-    addAvatar = () => {
-        const options = {
-            title: 'Select Image',
-            storageOptions: {
-                skipBackup: true,
-                path: 'images',
-            },
-        };
-
-        ImagePicker.showImagePicker(options, response => {
-            if (response.didCancel) {
-
-            } else if (response.error) {
-                alert('And error occured: ', response.error);
+        apiService.getPreferencesForUser(userid, (res) => {
+            console.log('res--->>', res)
+            if (res.isSuccess) {
+                updatePreferenceStore(res.response);
             } else {
-                this.setState({
-                    avatars: [...this.state.avatars, response]
-                });
+                console.log('failed: ', res.message)
             }
         });
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        this.setCharacter();
+    }
+
+    setCharacter = () => {
+        const { characterSelectedId, characters } = this.props.auth;
+        this.character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
+    }
+
+    onEditPlayer = () => {
+        this.props.navigation.navigate('EditPlayer')
+    };
+
+    selectAvatar = (characterId) => {
+        const { auth, setUser, navigation } = this.props;
+        if(auth.characterSelectedId === characterId){
+            return;
+        }
+        apiService.updateProfileForUser(auth.user,{characterSelectedId: characterId}, (res) => {
+            if (res.isSuccess) {
+                AsyncStorage.setItem('USER', JSON.stringify(res.response));
+                setUser(res.response);
+            } else {
+                console.log('error', res.message);
+                showToast('Saving Profile Failed!');
+            }
+        });
+    }
+
+    onAddCharacter = () => {
+        this.props.navigation.navigate('EditProfile');
     };
 
     render() {
-        const { avatarId, avatars } = this.props.auth
+        const { characterSelectedId, characters } = this.props.auth;
+        const characterAvatar = getCharacterAvatar(this.character);
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
@@ -102,105 +91,6 @@ class UserProfile extends React.Component {
                         onPress={() => this.props.navigation.navigate('GameType')} onPressRight={() => this.props.navigation.navigate('Setting')}
                         bgColor={'#250901'} title={'USER PROFILE'} headerBorderWidth={2} imgLeft={images.ic_controller} imgRight={images.ic_settings} />
                     <View style={styles.container}>
-                        <Modal
-                            visible={this.state.showProfileEditModal}
-                            transparent={true}
-                            animationType="fade"
-                            onRequestClose={this.toggleProfileEditModal}
-                        >
-                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "rgba(0, 0, 0, 0.5)", }}>
-                                <View style={{
-                                    width: wp('80%'),
-                                    height: hp('40%'),
-                                    backgroundColor: '#fff',
-                                    borderColor: '#fff',
-                                    borderWidth: 1,
-                                    borderRadius: 5,
-                                }}>
-
-
-                                    <View style={{ flex: 4, justifyContent: 'center', alignItems: 'center' }}>
-                                        <Text style={{ fontSize: wp('6%'), fontWeight: 'bold', marginTop: wp('5%'), color: '#000000', }}>Edit your profile now!</Text>
-                                        <View style={{ marginLeft: wp(5), marginRight: wp(5), marginTop: wp(5) }}>
-                                            <InputComponent
-                                                secureTextEntry={false}
-                                                inputPadding={wp(2)}
-                                                inputHeight={hp(6)}
-                                                inputWidth={wp(70)}
-                                                inputRadius={wp(5)}
-                                                bgColor={'grey'}
-                                                placeholder={'Name'}
-                                                placeholderTextColor={'#fff'}
-                                                onChangeText={username => this.setState({ username })}
-                                                value={this.state.username}
-                                            />
-                                        </View>
-                                        <View style={{ marginLeft: wp(5), marginRight: wp(5), marginTop: wp(5) }}>
-                                            <InputComponent
-                                                secureTextEntry={false}
-                                                inputPaddingLeft={wp(2)}
-                                                inputHeight={hp(6)}
-                                                inputWidth={wp(70)}
-                                                inputRadius={wp(10)}
-                                                bgColor={'grey'}
-                                                placeholder={'Age'}
-                                                placeholderTextColor={'#fff'}
-                                                onChangeText={age => this.setState({ age })}
-                                                value={this.state.age + ''}
-                                            />
-                                        </View>
-                                        <View style={{ marginLeft: wp(5), marginRight: wp(5), marginTop: wp(5) }}>
-                                            <InputComponent
-                                                secureTextEntry={false}
-                                                inputPaddingLeft={wp(2)}
-                                                inputHeight={hp(6)}
-                                                inputWidth={wp(70)}
-                                                inputRadius={wp(10)}
-                                                bgColor={'grey'}
-                                                placeholder={'Address'}
-                                                placeholderTextColor={'#fff'}
-                                                onChangeText={address => this.setState({ address })}
-                                                value={this.state.address}
-                                            />
-                                        </View>
-                                    </View>
-
-                                    {/*Buttons*/}
-                                    <View
-                                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-                                    >
-                                        <View style={{ marginLeft: wp('5%') }}>
-
-                                            <TouchableOpacity onPress={() => this.accept()} style={{
-                                                width: wp('30%'), height: hp('5%'),
-                                                // backgroundColor:'grey',
-                                                borderRadius: 5,
-                                                justifyContent: 'center', alignItems: 'center',
-                                                borderWidth: 1,
-                                                borderColor: 'grey'
-
-
-                                            }}>
-                                                <Text style={{ color: '#E83528', fontSize: wp('4%'), }}>Agree</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                        <View style={{ marginRight: wp('5%') }}>
-                                            <TouchableOpacity onPress={() => this.cancel()} style={{
-                                                width: wp('30%'), height: hp('5%'),
-                                                backgroundColor: 'white',
-                                                borderColor: 'grey',
-                                                borderRadius: 5,
-                                                justifyContent: 'center', alignItems: 'center',
-                                                borderWidth: 1,
-
-                                            }}>
-                                                <Text style={{ color: '#E83528', fontSize: wp('4%'), }}>Cancel</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </View>
-                            </View>
-                        </Modal>
                         <View style={styles.containerImg}>
                             <View style={{ marginTop: hp(1) }}>
                                 <Text style={{
@@ -216,14 +106,14 @@ class UserProfile extends React.Component {
                                     paddingBottom: wp(0),
                                 }}>Crew</Text>
                             </View>
-                            <Image style={styles.img} source={avatars[avatarId]} />
-                            <TouchableOpacity onPress={this.toggleProfileEditModal}>
+                            <Image style={styles.img} source={characterAvatar} />
+                            <TouchableOpacity onPress={this.onEditPlayer}>
                                 <Image style={styles.icon} source={images.ic_edit_2} />
                             </TouchableOpacity>
                         </View>
                         <View style={styles.containerText}>
-                            <Text style={styles.textHeading}>{this.state.username + ", " + this.state.age}</Text>
-                            <Text style={styles.text}>{this.state.address}</Text>
+                            <Text style={styles.textHeading}>{this.character.firstName + " " + this.character.lastName}</Text>
+                            <Text style={styles.text}>{this.character.location}</Text>
                         </View>
                     </View>
 
@@ -234,80 +124,6 @@ class UserProfile extends React.Component {
                         <View style={styles.viewAvatar}>
                             <Text style={{ color: '#ffffff', fontFamily: 'Montserrat-Regular' }}>MY AVATARS</Text>
                         </View>
-
-                        <Modal
-                            visible={this.state.showAvatarAddModal}
-                            transparent={true}
-                            animationType="fade"
-                            onRequestClose={this.toggleAvatarAddModal}
-                        >
-                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "rgba(0, 0, 0, 0.5)", }}>
-                                <View style={{
-                                    width: wp('80%'),
-                                    height: hp('25%'),
-                                    backgroundColor: '#fff',
-                                    borderColor: '#fff',
-                                    borderWidth: 1,
-                                    borderRadius: 5,
-                                }}>
-
-
-                                    <View style={{ flex: 2, justifyContent: 'center', alignItems: 'center' }}>
-
-                                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', width: wp('75%'), justifyContent: 'center' }}>
-                                            <TouchableOpacity onPress={() => this.term()}>
-                                                <Text style={{ color: '#C42D3E', fontSize: wp('4%'), fontWeight: 'bold', textDecorationLine: 'underline', }}>
-                                                    AVATARS
-                                                </Text>
-                                            </TouchableOpacity>
-                                            <Text style={{ fontSize: wp('4%'), fontWeight: 'bold', color: '#000000', }}> and </Text>
-                                            <TouchableOpacity onPress={() => this.privacy()}>
-                                                <Text style={{ color: '#C42D3E', fontSize: wp('4%'), fontWeight: 'bold', textDecorationLine: 'underline', }}>
-                                                    AVATARS
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                        <Text style={{ fontSize: wp('4%'), fontWeight: 'bold', marginTop: wp('-10%'), color: '#000000', }}>avatar, region, name</Text>
-
-
-                                    </View>
-
-                                    {/*Buttons*/}
-                                    <View
-                                        style={{ flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <View style={{ marginLeft: wp('2%') }}>
-
-                                            <TouchableOpacity onPress={() => this.accept()} style={{
-                                                width: wp('36%'), height: hp('7%'),
-                                                // backgroundColor:'grey',
-                                                borderRadius: 5,
-                                                justifyContent: 'center', alignItems: 'center',
-                                                borderWidth: 1,
-                                                borderColor: 'grey'
-
-
-                                            }}>
-                                                <Text style={{ color: '#E83528', fontSize: wp('4%'), }}>Agree</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                        <View style={{ marginRight: wp('2%') }}>
-                                            <TouchableOpacity onPress={() => this.cancel()} style={{
-                                                width: wp('36%'), height: hp('7%'),
-                                                backgroundColor: 'white',
-                                                borderColor: 'grey',
-                                                borderRadius: 5,
-                                                justifyContent: 'center', alignItems: 'center',
-                                                borderWidth: 1,
-
-                                            }}>
-                                                <Text style={{ color: '#E83528', fontSize: wp('4%'), }}>Cancel</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </View>
-                            </View>
-                        </Modal>
-
                         <View style={{
                             marginTop: hp(1),
                             backgroundColor: '#250901',
@@ -334,15 +150,18 @@ class UserProfile extends React.Component {
                             </View>
                             <View style={{ height: '38%', marginTop: '4%', marginLeft: '3%', }}>
                                 <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} >
-                                    {avatars.map((avatar, i) => {
+                                    {characters.map((character, i) => {
                                         return (
-                                            <TouchableOpacity key={i} onPress={() => this.selectAvatar(i)}>
-                                                <Image style={styles.image} source={avatar} />
+                                            <TouchableOpacity style={styles.avatarContainer} key={i} onPress={() => this.selectAvatar(character.id)}>
+                                                <>
+                                                    <Image style={styles.image} source={getCharacterAvatar(character)} />
+                                                    {  characterSelectedId === character.id ? <Image style={[styles.genderCheck,{height:hp(5)},{width: wp(5), resizeMode: 'contain'}]} source={images.ic_player_check} /> : null}
+                                                </>
                                             </TouchableOpacity>
                                         )})}
                                 </ScrollView>
                             </View>
-                            <TouchableOpacity onPress={this.toggleAvatarAddModal}>
+                            <TouchableOpacity onPress={this.onAddCharacter}>
                                 <Image style={{ height: hp(15), width: wp(15), resizeMode: 'contain', }} source={images.ic_add} />
                             </TouchableOpacity>
                         </View>
@@ -408,10 +227,21 @@ const styles = StyleSheet.create({
         fontFamily: 'Montserrat-Light',
 
     },
+    avatarContainer: {
+        width: 80,
+        height: 80,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 20,
+        borderRadius: 8,
+        backgroundColor: 'white',
+        borderColor: '#fae31a',
+        borderWidth: 2,
+        marginEnd: wp(3),
+    },
     image: {
-        height: hp(10),
-        width: wp(18),
-        marginStart: wp(2),
+        width: '80%',
         resizeMode: 'contain',
     },
     viewAvatar: {
@@ -430,17 +260,21 @@ const styles = StyleSheet.create({
         right: 0,
         zIndex: 1,
     },
+    genderCheck: {
+        position: 'absolute',
+        right: -8,
+        bottom: -16
+    }
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    updateAuthInfo: (value) => dispatch(updateAuthInfo(value)),
-    getPreferences: (value) => dispatch(getPreferences(value)),
-    updateProfileForUser: (value) => dispatch(updateProfileForUser(value)),
+    updatePreferenceStore: (value) => dispatch(updatePreferenceStoreAction(value)),
+    setUser: (params) => dispatch(setUserAction(params)),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
-    auth: state.auth,
+    auth: state.login.profile,
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(UserProfile)

@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "657946000234-uuj26nhn36uaq8pj267852brv3sgld0q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.brainyapps.gamenightspadez",
+            "certificate_hash": "bef065af84027805b5588a954166cece29cafa9e"
+          }
+        },
+        {
           "client_id": "657946000234-6f1kng83oolvm5g5vcoe77intsvd67oj.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -48,10 +56,10 @@
               "client_type": 3
             },
             {
-              "client_id": "657946000234-k1au5j15ltass5sn1uf154akk4tiog1e.apps.googleusercontent.com",
+              "client_id": "657946000234-0cc7t5it94ifvreik834trrn9587ee1s.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.brainyapps.gamenightspadez"
+                "bundle_id": "com.brainyapps.GameNightSpadez"
               }
             }
           ]

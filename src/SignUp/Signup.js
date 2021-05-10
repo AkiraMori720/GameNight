@@ -1,5 +1,5 @@
 import React from 'react';
-import { AsyncStorage, View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Modal, ImageBackground, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, SafeAreaView } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import TextButton from "../common/TextButton";
 import images from "../../assets/images";
@@ -8,9 +8,10 @@ import InputComponent from "../common/InputComponent";
 import TickCircle from "../common/TickCircle";
 import SimpleButton from "../common/SimpleButton";
 import { connect } from 'react-redux'
-import {
-    signUpWithEmailAndPassword,
-} from '../actions/auth'
+import {showToast} from "../common/info";
+import apiService from "../firebase/FirebaseHelper";
+import AsyncStorage from "@react-native-community/async-storage";
+import {loginSuccess as loginSuccessAction, loginSuccess, logout as logoutAction} from "../actions/login";
 
 class Signup extends React.Component {
 
@@ -19,7 +20,8 @@ class Signup extends React.Component {
         this.state = {
             showAlert: false,
             email: '',
-            password: ''
+            password: '',
+            loading: false
         }
     };
     validateEmail(email) {
@@ -39,7 +41,7 @@ class Signup extends React.Component {
 
     accept() {
         this.setState(prevState => ({ showAlert: false }), () => {
-            setTimeout(() => this.signUpWithEmailAndPassword(), 1000)
+            setTimeout(() => this.signUpWithEmailAndPassword(), 100)
         })
     }
 
@@ -62,7 +64,6 @@ class Signup extends React.Component {
     };
 
     signUpWithEmailAndPassword = () => {
-
         const { email,
             password,
             isValidEmail,
@@ -70,21 +71,26 @@ class Signup extends React.Component {
             isContainLetter,
             isContainNum,
             isContainSpecial } = this.state
+        const { logout, loginSuccess } = this.props;
+
         if (isValidEmail && isLeast6Char && isContainLetter && isContainNum && isContainSpecial) {
-            this.props.signUpWithEmailAndPassword(email, password)
-                .then(() => {
-                    this.props.navigation.navigate('Introduction');
-                    //this.props.navigation.navigate('UserProfile')
-                })
-                .catch((err) => {
-                    console.log('signup error: ', err);
-                })
+            this.setState({loading: true});
+            apiService.signUpWithEmailAndPassword(email, password, async (res) => {
+                if (res.isSuccess) {
+                    await AsyncStorage.setItem('email', email);
+                    await AsyncStorage.setItem('password', password);
+                    loginSuccess(res.response);
+                } else {
+                    showToast('Login Failed!');
+                    console.log('signup error: ', res.message);
+                }
+                this.setState({loading: false});
+            })
         }
         else {
-            alert('The email and password is invalid!')
-            console.log('The email and password is invalid!')
+            showToast('The email and password is invalid!')
+            this.setState({loading: false});
         }
-
     }
 
     renderPrivacyAlert() {
@@ -179,7 +185,7 @@ class Signup extends React.Component {
                             inputRadius={wp(10)}
                             bgColor={'#5c0801'}
                             placeholder={'Email'}
-                            placeholderTextColor={'#fff'}
+                            keyboardType="email-address"
                             value={email}
                             onChangeText={value => this.setState({ email: value, isValidEmail: this.validateEmail(value) })}
                         />
@@ -197,11 +203,10 @@ class Signup extends React.Component {
                             iconWidth={wp(3.5)}
                             imgRight={images.ic_view_pass}
                             placeholder={'Password'}
-                            placeholderTextColor={'#fff'}
                             value={password}
                             onChangeText={value => this.setState({
                                 password: value,
-                                isLeast6Char: value && value.length >= 6 ? true : false,
+                                isLeast6Char: value && value.length >= 6,
                                 isContainLetter: this.hasLetter(value),
                                 isContainNum: this.hasNumber(value),
                                 isContainSpecial: this.hasSpecial(value)
@@ -224,7 +229,10 @@ class Signup extends React.Component {
                         <View style={styles.btnView}>
                             <SimpleButton
                                 btnHeight={hp(6)}
-                                onPress={this.togglePrivacyAlertModal} textColor={'#000000'} title={'Sign Up'} />
+                                onPress={this.togglePrivacyAlertModal} textColor={'#000000'}
+                                title={'Sign Up'}
+                                loading={this.state.loading}
+                            />
                             <TextButton onPress={() => this.props.navigation.navigate('Login')} title={'Already have an account?'} />
                         </View>
                     </View>
@@ -269,13 +277,12 @@ const styles = StyleSheet.create({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    signUpWithEmailAndPassword: (email, password) => dispatch(signUpWithEmailAndPassword(email, password)),
-    logout: () => dispatch(logout()),
-    dispatch
+    loginSuccess: (params) => dispatch(loginSuccessAction(params)),
+    logout: () => dispatch(logoutAction())
 })
 
 const mapStateToProps = (state) => ({
-    auth: state.auth,
+    auth: state.login.profile,
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(Signup)

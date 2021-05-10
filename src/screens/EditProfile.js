@@ -1,254 +1,160 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import {View, Text, StyleSheet, TextInput, TouchableOpacity, Image, SafeAreaView, ScrollView} from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
 import { connect } from 'react-redux';
-import {
-    updateProfileForUser,
-} from '../actions/auth';
+import { setUser as setUserAction } from "../actions/login";
+import InputComponent from "../common/InputComponent";
+import SimpleButton from "../common/SimpleButton";
+import {showToast} from "../common/info";
+import {GENDER_MALE} from "../constants/constants";
 
+const genders = [
+    {
+        id: 'male',
+        label: 'MALE',
+        image: images.gender_male
+    },
+    {
+        id: 'female',
+        label: 'FEMALE',
+        image: images.gender_female
+    }
+];
 
 class EditProfile extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            skinColor: 'color1',
-            accessory: 'option1',
-            nailColor: 'option1',
-            handTattoo: 'option1',
-            spadezDeck: 'option1',
-            spadezTable: 'option1',
-            skinColors: ['color1', 'color2', 'color3', 'color4', 'color5'],
-            accessories: ['option1', 'option2', 'option3'],
-            nailColors: ['option1', 'option2', 'option3'],
-            handTattoos: ['option1', 'option2', 'option3'],
-            spadezDecks: ['option1', 'option2', 'option3'],
-            spadezTables: ['option1', 'option2', 'option3'],
+            firstName: '',
+            lastName: '',
+            location: '',
+            gender: GENDER_MALE
         }
     }
 
     componentDidMount() {
-        console.log('componentdidmount')
-        const { skinColor, accessory, nailColor, handTattoo, spadezDeck, spadezTable } = this.props.auth
-        this.setState({
-            skinColor, accessory, nailColor, handTattoo, spadezDeck, spadezTable
-        })
     }
 
-    _onPressSkinColor(idx) {
-        const skinColor = this.state.skinColors[idx]
-        const profileData = { skinColor }
-
-        this.props.updateProfileForUser(profileData)
-            .then(() => {
-                this.setState({
-                    skinColor
-                })
-            })
-    }
-
-    _onPressAccessory(idx) {
-        const accessory = this.state.accessories[idx]
-        const profileData = { accessory }
-
-        this.props.updateProfileForUser(profileData)
-            .then(() => {
-                this.setState({
-                    accessory
-                })
-            })
-    }
-
-    _onPressNailColor(idx) {
-        const nailColor = this.state.nailColors[idx]
-        const profileData = { nailColor }
-
-        this.props.updateProfileForUser(profileData)
-            .then(() => {
-                this.setState({
-                    nailColor
-                })
-            })
-    }
-
-    _onPressHandTattoo(idx) {
-        const handTattoo = this.state.handTattoos[idx]
-        const profileData = { handTattoo }
-
-        this.props.updateProfileForUser(profileData)
-            .then(() => {
-                this.setState({
-                    handTattoo
-                })
-            })
-    }
-
-    _onPressSpadezDeck(idx) {
-        const spadezDeck = this.state.spadezDecks[idx]
-        const profileData = { spadezDeck }
-
-        this.props.updateProfileForUser(profileData)
-            .then(() => {
-                this.setState({
-                    spadezDeck
-                })
-            })
-    }
-
-    _onPressSpadezTable(idx) {
-        const spadezTable = this.state.spadezTables[idx]
-        const profileData = { spadezTable }
-
-        this.props.updateProfileForUser(profileData)
-            .then(() => {
-                this.setState({
-                    spadezTable
-                })
-            })
-    }
-
-    getBtnStyle(id, length) {
-        if (id === 0) {
-            return styles.typeViewBtnLeft
+    onContinue = () => {
+        const { firstName, lastName, location, gender } = this.state;
+        if(firstName.length === 0){
+            showToast('Please Input First Name!');
+            return;
         }
-        else if (id === length - 1) {
-            return styles.typeViewBtnRight
+        if(lastName.length === 0){
+            showToast('Please Input Last Name!');
+            return;
         }
-        else {
-            return styles.typeViewBtnMiddle
+        if(location.length === 0){
+            showToast('Please Input Position!');
+            return;
         }
+
+        let profile = {
+            firstName,
+            lastName,
+            location,
+            gender
+        }
+        this.props.navigation.navigate('EditAvatar', { profile });
+    }
+
+    onSelectGender = (gender) => {
+        this.setState({ gender });
     }
 
     render() {
-        const { skinColors, accessories, nailColors, handTattoos, spadezDecks, spadezTables } = this.state
-        const { skinColor, accessory, nailColor, handTattoo, spadezDeck, spadezTable } = this.props.auth
-        console.log(this.props.auth)
-
+        const { firstName, lastName, location, gender } = this.state;
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
-                    <Header onPress={() => this.props.navigation.pop()} bgColor={'#250901'} headerBorderWidth={2} imgLeft={images.ic_back} title={'GAMENIGHT SPADEZ'} />
+                    <Header bgColor={'#250901'} headerBorderWidth={2} title={'EDIT PROFILE'} />
                     <View style={styles.contentContainer}>
-                        <View style={styles.textView}>
-                            <Text style={styles.text}>Choose skin color</Text>
+                        <View style={{ marginBottom: wp(3) }}>
+                            <InputComponent
+                                value={firstName}
+                                inputPaddingLeft={wp(2)}
+                                inputHeight={hp(6)}
+                                inputWidth={wp(80)}
+                                inputRadius={wp(10)}
+                                bgColor={'#5c0801'}
+                                placeholder={'First Name'}
+                                onChangeText={(value) => this.setState({ firstName: value })}
+                            />
                         </View>
-                        <View style={styles.typeView}>
-                            <View style={styles.typeInnerView}>
-                                {skinColors && skinColors.map((color, i) => {
-                                    const btnStyle = this.getBtnStyle(i, skinColors.length)
-                                    const backgroundColor = skinColor === color ? 'red' : '#460000'
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            onPress={() => this._onPressSkinColor(i)}
-                                            style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                        >
-                                            <Text style={styles.textBtn}>{color}</Text>
-                                        </TouchableOpacity>
-                                    )
-                                })}
+                        <View style={{ marginBottom: wp(3) }}>
+                            <InputComponent
+                                value={lastName}
+                                inputPaddingLeft={wp(2)}
+                                inputHeight={hp(6)}
+                                inputWidth={wp(80)}
+                                inputRadius={wp(10)}
+                                bgColor={'#5c0801'}
+                                placeholder={'Last Name'}
+                                onChangeText={(value) => this.setState({ lastName: value })}
+                            />
+                        </View>
+                        <View style={{ marginBottom: wp(3) }}>
+                            <InputComponent
+                                value={location}
+                                inputPaddingLeft={wp(2)}
+                                inputHeight={hp(6)}
+                                inputWidth={wp(80)}
+                                inputRadius={wp(10)}
+                                bgColor={'#5c0801'}
+                                placeholder={'Location'}
+                                imgRight={images.ic_location}
+                                onChangeText={(value) => this.setState({ location: value })}
+                            />
+                        </View>
+                        <View style={{
+                            alignItems: 'center',
+                            marginTop: '4%',
+                        }}>
+                            <View style={styles.preview}>
+                                <Text style={{ color: '#ffffff', fontFamily: 'Montserrat-Regular' }}>SELECT GENDER</Text>
+                            </View>
+                            <View style={{
+                                marginTop: hp(1),
+                                backgroundColor: '#250901',
+                                height: 220,
+                                width: wp(90),
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderWidth: 3,
+                                borderColor: '#E83528',
+                                borderRadius: 7,
+                            }}>
+                                <View style={styles.genders}>
+                                    {genders.map((item, i) => {
+                                        const borderColor = gender === item.id ? '#f6ed5c' : '#54140a'
+                                        const textColor = gender === item.id? '#f6ed5c' : '#860c03';
+                                        return (
+                                            <TouchableOpacity
+                                                key={i}
+                                                onPress={() => this.onSelectGender(item.id)}
+                                                style={{ width: '40%', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 20, borderRadius: 8, backgroundColor: '#400a02', borderWidth: 2, borderColor: borderColor }}
+                                            >
+                                                <>
+                                                    <Image style={{ height: '80%', width: '100%', resizeMode: 'contain' }} source={item.image} />
+                                                    <Text style={{ color: textColor, marginTop: 8 }}>{item.label}</Text>
+                                                    { gender === item.id ? <Image style={[styles.genderCheck,{height:hp(6)},{width: wp(6), resizeMode: 'contain'}]} source={images.ic_player_check} /> : null}
+                                                </>
+                                            </TouchableOpacity>
+                                        )
+                                    })}
+                                </View>
                             </View>
                         </View>
-                        <View style={styles.textView}>
-                            <Text style={styles.text}>Select Accessory</Text>
-                        </View>
-                        <View style={styles.typeView}>
-                            <View style={styles.typeInnerView}>
-                                {accessories && accessories.map((item, i) => {
-                                    const btnStyle = this.getBtnStyle(i, accessories.length)
-                                    const backgroundColor = accessory === item ? 'red' : '#460000'
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            onPress={() => this._onPressAccessory(i)}
-                                            style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                        >
-                                            <Text style={styles.textBtn}>{item}</Text>
-                                        </TouchableOpacity>
-                                    )
-                                })}
-                            </View>
-                        </View>
-                        <View style={styles.textView}>
-                            <Text style={styles.text}>Nail Color</Text>
-                        </View>
-                        <View style={styles.typeView}>
-                            <View style={styles.typeInnerView}>
-                                {nailColors && nailColors.map((item, i) => {
-                                    const btnStyle = this.getBtnStyle(i, nailColors.length)
-                                    const backgroundColor = nailColor === item ? 'red' : '#460000'
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            onPress={() => this._onPressNailColor(i)}
-                                            style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                        >
-                                            <Text style={styles.textBtn}>{item}</Text>
-                                        </TouchableOpacity>
-                                    )
-                                })}
-                            </View>
-                        </View>
-                        <View style={styles.textView}>
-                            <Text style={styles.text}>Hand Tattoo</Text>
-                        </View>
-                        <View style={styles.typeView}>
-                            <View style={styles.typeInnerView}>
-                                {handTattoos && handTattoos.map((item, i) => {
-                                    const btnStyle = this.getBtnStyle(i, nailColors.length)
-                                    const backgroundColor = handTattoo === item ? 'red' : '#460000'
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            onPress={() => this._onPressHandTattoo(i)}
-                                            style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                        >
-                                            <Text style={styles.textBtn}>{item}</Text>
-                                        </TouchableOpacity>
-                                    )
-                                })}
-                            </View>
-                        </View>
-                        <View style={styles.textView}>
-                            <Text style={styles.text}>Choose Spadez Deck</Text>
-                        </View>
-                        <View style={styles.typeView}>
-                            <View style={styles.typeInnerView}>
-                                {spadezDecks && spadezDecks.map((item, i) => {
-                                    const btnStyle = this.getBtnStyle(i, nailColors.length)
-                                    const backgroundColor = spadezDeck === item ? 'red' : '#460000'
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            onPress={() => this._onPressSpadezDeck(i)}
-                                            style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                        >
-                                            <Text style={styles.textBtn}>{item}</Text>
-                                        </TouchableOpacity>
-                                    )
-                                })}
-                            </View>
-                        </View>
-                        <View style={styles.textView}>
-                            <Text style={styles.text}>Choose Spadez Table</Text>
-                        </View>
-                        <View style={styles.typeView}>
-                            <View style={styles.typeInnerView}>
-                                {spadezTables && spadezTables.map((item, i) => {
-                                    const btnStyle = this.getBtnStyle(i, nailColors.length)
-                                    const backgroundColor = spadezTable === item ? 'red' : '#460000'
-                                    return (
-                                        <TouchableOpacity
-                                            key={i}
-                                            onPress={() => this._onPressSpadezTable(i)}
-                                            style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                        >
-                                            <Text style={styles.textBtn}>{item}</Text>
-                                        </TouchableOpacity>
-                                    )
-                                })}
-                            </View>
+                        <View style={styles.viewBottom}>
+                            <SimpleButton
+                                onPress={() => this.onContinue()}
+                                btnHeight={hp(6)}
+                                btnWidth={wp(80)}
+                                textColor={'#000000'} title={'CONTINUE'}
+                            />
                         </View>
                     </View>
                 </View>
@@ -267,77 +173,51 @@ const styles = StyleSheet.create({
         height: hp(100),
         width: wp(100),
         padding: wp(5),
+        alignItems: 'center'
         // backgroundColor:'#881000',
     },
-    text: {
-        fontSize: wp(3.6),
-        // fontWeight:'bold',
-        color: '#fff',
-        textAlign: 'center',
-        paddingTop: '2%',
-        fontFamily: 'Montserrat-Regular'
-    },
-    textView: {
-        height: hp(6),
+    preview: {
+        height: '10%',
+        width: '40%',
+        backgroundColor: '#881000',
+        borderWidth: 2,
+        borderColor: '#E83528',
+        borderRadius: wp(7),
         justifyContent: 'center',
-        alignItems: 'flex-start',
-        // backgroundColor: 'green'
+        alignItems: 'center',
+        position: 'absolute',
+        top: hp(-0.7),
+        bottom: hp(0),
+        left: wp(30),
+        right: 0,
+        zIndex: 1,
     },
-    typeView: {
-        alignItems: 'flex-start'
-    },
-    typeInnerView: {
+    genders: {
+        width: '100%',
+        height: 140,
         flexDirection: 'row',
+        justifyContent: 'space-around'
+    },
+    viewBottom: {
+        height: hp(15),
+        // backgroundColor:'gold',
         justifyContent: 'flex-start',
-        alignItems: 'center',
-        height: hp(5),
-        width: wp(80),
-        // backgroundColor: 'green',
-        borderTopLeftRadius: wp(5),
-        borderBottomLeftRadius: wp(5),
-        borderTopRightRadius: wp(5),
-        borderBottomRightRadius: wp(5)
+        marginTop: hp(6),
     },
-    typeViewBtnLeft: {
-        backgroundColor: 'red',
-        height: '100%',
-        width: wp(20),
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderTopLeftRadius: wp(5),
-        borderBottomLeftRadius: wp(5),
-    },
-    typeViewBtnRight: {
-        backgroundColor: '#460000',
-        height: '100%',
-        width: wp(20),
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderTopRightRadius: wp(5),
-        borderBottomRightRadius: wp(5)
-    },
-    typeViewBtnMiddle: {
-        backgroundColor: '#460000',
-        height: '100%',
-        width: wp(20),
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    textBtn: {
-        color: '#fff',
-        fontSize: wp(3.6),
-        fontFamily: 'Montserrat-Bold'
+    genderCheck: {
+        position: 'absolute',
+        right: -8,
+        bottom: -16
     }
-
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    updateProfileForUser: (profileData) => dispatch(updateProfileForUser(profileData)),
+    setUser: (params) => dispatch(setUserAction(params)),
     dispatch
 })
 
 const mapStateToProps = (state) => ({
-    auth: state.auth
+    auth: state.login.profile
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(EditProfile)

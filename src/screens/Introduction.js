@@ -5,14 +5,20 @@ import Header from '../common/Header';
 import images from '../../assets/images';
 import Video from 'react-native-video';
 import SimpleButton from "../common/SimpleButton";
+import {connect} from "react-redux";
 
 const introductionVideo = require('../../assets/introduction.mp4');
 
-export default class Introduction extends React.Component {
+class Introduction extends React.Component {
 
     start(){
+        const { characters } = this.props.auth;
         this.setState({showVideo: false});
-        this.props.navigation.navigate('UserProfile')
+        if(characters && characters.length > 0){
+            this.props.navigation.navigate('UserProfile')
+        } else {
+            this.props.navigation.navigate('EditProfile')
+        }
     }
 
     render() {
@@ -63,6 +69,12 @@ export default class Introduction extends React.Component {
             );
     }
 }
+
+const mapStateToProps = (state) => ({
+    auth: state.login.profile,
+})
+
+export default connect(mapStateToProps, null)(Introduction)
 
 const styles= StyleSheet.create({
     mainContainer: {
