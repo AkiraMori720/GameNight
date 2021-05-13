@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, TextInput, TouchableOpacity, Image, SafeAreaView, ScrollView} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, ScrollView} from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
@@ -8,7 +8,6 @@ import apiService from "../firebase/FirebaseHelper";
 import AsyncStorage from "@react-native-community/async-storage";
 import {USER} from "../actions/types";
 import { setUser as setUserAction } from "../actions/login";
-import normalize from "react-native-normalize/src/index";
 import SimpleButton from "../common/SimpleButton";
 import {PLAYER_PROPS} from "../constants/constants";
 import {showToast} from "../common/info";

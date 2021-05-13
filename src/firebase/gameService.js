@@ -1,6 +1,12 @@
 // import firebase from "react-native-firebase";
 import firestore from "@react-native-firebase/firestore";
 import * as CT from '../constants/cardKinds';
+import database from "@react-native-firebase/database";
+
+const asyncFilter = async (arr, predicate) => {
+    const results = await Promise.all(arr.map(predicate));
+    return arr.filter((_v, index) => results[index]);
+}
 
 class firebaseServices {
     setOverbookPenalty = (winScore) => {
@@ -137,6 +143,7 @@ class firebaseServices {
                             setTimeout(() => {
                                 this.updateGame(data.roomid, game, (res) => {
                                     if (game.renig === 0) {
+                                        console.log('gameNextTrick', data.roomid, game);
                                         if ((game.turnIndex / 4) === 13) {
                                             setTimeout(() => {
                                                 this.finishRound(data.roomid, callback);
@@ -202,7 +209,7 @@ class firebaseServices {
     calculateScore = (game) => {
         var maxScore = 0;
         var minScore = 0;
-        var aRoundScores = [];
+        var aRoundScores = {};
         for (var i = 0; i < 4; i++) {
             var player = game.players[i];
 
@@ -226,7 +233,7 @@ class firebaseServices {
                 score -= game.penaltyScore;
                 player.bagsTaken -= 10;
             }
-            aRoundScores.push(score);
+            aRoundScores[i] = score;
             player.gameScore += score;
             if (maxScore < player.gameScore) {
                 maxScore = player.gameScore;
@@ -295,7 +302,7 @@ class firebaseServices {
         return topScore;
     }
     // add 
-    addRoom = (room, callback) => {
+    addRoom = (room, callback = null) => {
         firestore()
             .collection('rooms')
             .add(room)
@@ -309,7 +316,7 @@ class firebaseServices {
             })
     }
 
-    updateRoom = (roomid, room, callback) => {
+    updateRoom = (roomid, room, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
@@ -326,7 +333,7 @@ class firebaseServices {
     
 
 
-    createPrivateGame = (data, callback) => {
+    createPrivateGame = (data, callback = null) => {
         let room = {
             name: 'room name',
             started: false,
@@ -366,7 +373,8 @@ class firebaseServices {
             currentRoundTricksTaken: 0,
             bagsTaken: 0,
             gameScore: 0,
-            isShownVoidInSuit: [false, false, false, false]
+            isShownVoidInSuit: [false, false, false, false],
+            config: data.config
         }
         room.game.players.push(player);
         firestore()
@@ -435,12 +443,25 @@ class firebaseServices {
                 console.error(error)
             })
     }   */
-    joinPrivateGame = (data, callback) => {
+    getOnlinePlayers = async(roomId, players) => {
+        return await asyncFilter(players,
+            (async p => {
+                const reference = database().ref(`/online/${roomId}/${p.userid}`);
+                console.log(`Room: ${roomId} Player: ${p.userid} Presence:`, reference);
+                if(reference){
+                    const presence = await reference.once('value');
+                    return presence.val();
+                }
+                return false;
+            })
+        );
+    }
+    joinPrivateGame = (data, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(data.roomid)
             .get()
-            .then(snapshot => {
+            .then(async (snapshot) => {
                 let room = snapshot.data()
                 let game = room.game
                 if (game.players.length < 4) {
@@ -453,8 +474,12 @@ class firebaseServices {
                         currentRoundTricksTaken: 0,
                         bagsTaken: 0,
                         gameScore: 0,
-                        isShownVoidInSuit: [false, false, false, false]
+                        isShownVoidInSuit: [false, false, false, false],
+                        config: data.config
                     }
+
+                    room.game.players = await this.getOnlinePlayers(data.roomid, room.game.players);
+
                     room.game.players.push(player)
                     if (room.game.players.length === 4) {
                         room.waiting = false;
@@ -465,7 +490,9 @@ class firebaseServices {
                         }
                         this.initGameForRound(room.game)
                     }
-					/* -------- 수정할 부분 -------- */
+
+                    console.log('Game Room', room);
+					// TODO change
                     this.updateRoom(data.roomid, room, callback)
                 }
             })
@@ -592,21 +619,26 @@ class firebaseServices {
             });
     }
     */
-   joinGame = (data, callback) => {
+   joinGame = (data, callback = null) => {
         firestore()
         .collection('rooms')
         .get()
-        .then(querySnapshot => {
+        .then(async querySnapshot => {
             console.log('Total rooms: ', querySnapshot.size);
-
             let fJoined = false;
-            querySnapshot.forEach(documentSnapshot => {
+            await Promise.all(querySnapshot.docs.map(async documentSnapshot => {
                 let room = documentSnapshot.data()
                 if (!room.started && !room.private) {
                     if (room.game.gameType === data.gameType &&
                         room.game.gameStyle === data.gameStyle &&
                         room.game.gameLobby === data.gameLobby &&
                         room.game.winningScore === data.winningScore) {
+
+                        // Filter Online Users
+                        room.game.players = await this.getOnlinePlayers(documentSnapshot.id, room.game.players);
+
+                        console.log('Rooms Users: ', room.game.players.length);
+
                         if (room.game.players.length < 4) {
                             let player = {
                                 username: data.username,
@@ -617,10 +649,13 @@ class firebaseServices {
                                 currentRoundTricksTaken: 0,
                                 bagsTaken: 0,
                                 gameScore: 0,
-                                isShownVoidInSuit: [false, false, false, false]
+                                isShownVoidInSuit: [false, false, false, false],
+                                config: data.config
                             }
+
                             room.game.players.push(player)
-                            if (room.game.players.length === 4) {
+                            room.players_num = room.game.players.length;
+                            if (room.players_num === 4) {
                                 room.waiting = false;
                                 room.started = true;
                                 if(room.game.gameType === 'partner') {
@@ -628,15 +663,15 @@ class firebaseServices {
                                 }
                                 this.initGameForRound(room.game)
                             }
-                            /* -------- 수정할 부분 -------- */
+
+                            console.log('Game Room', room);
+                            // TODO change
                             this.updateRoom(documentSnapshot.id, room, callback)
                             fJoined = true;
-                            Break;
-
                         }
                     }
                 }
-            });
+            }));
             if (!fJoined) {
                 let room = {
                     name: 'room name',
@@ -676,16 +711,17 @@ class firebaseServices {
                     currentRoundTricksTaken: 0,
                     bagsTaken: 0,
                     gameScore: 0,
-                    isShownVoidInSuit: [false, false, false, false]
+                    isShownVoidInSuit: [false, false, false, false],
+                    config: data.config
                 }
                 room.game.players.push(player);
-                /* -------- 수정할 부분 -------- */
+                // TODO change
                 this.addRoom(room, callback)
             }
         });
     }
 
-    restartGame = (roomid, callback) => {
+    restartGame = (roomid, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
@@ -769,7 +805,7 @@ class firebaseServices {
         // Sort the players hand
         for (var j = 0; j < 4; j++) {
             game.players[j].cards.sort((a, b) => {
-                if (a.suit != b.suit) {
+                if (a.suit !== b.suit) {
                     return a.suitInt - b.suitInt;
                 } else {
                     return a.value - b.value;
@@ -837,7 +873,7 @@ class firebaseServices {
     //         })
     // }
 
-    setBid = (data, callback) => {
+    setBid = (data, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(data.roomid)
@@ -872,7 +908,7 @@ class firebaseServices {
             })
     }
 
-    setBlindBid = (data, callback) => {
+    setBlindBid = (data, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(data.roomid)
@@ -896,7 +932,7 @@ class firebaseServices {
             })
     }
 
-    findRenig = (roomid, callback) => {
+    findRenig = (roomid, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
@@ -925,7 +961,7 @@ class firebaseServices {
             })
     }
 
-    blindBid = (roomid, callback) => {
+    blindBid = (roomid, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
@@ -954,12 +990,12 @@ class firebaseServices {
             })
     }
 
-    updateGame = (roomid, game, callback) => {
+    updateGame = (roomid, game, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
             .update({
-                game: game
+                'game': game
             })
             .then(response => {
                 callback && callback({ isSuccess: true, response: response, message: null });
@@ -971,7 +1007,7 @@ class firebaseServices {
             })
     }
 
-    renigGame = (data, callback) => {
+    renigGame = (data, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(data.roomid)
@@ -981,8 +1017,8 @@ class firebaseServices {
                 let game = room.game
                 var renigPlayer = (data.finderId + 1) % 4;
                 const renigTeam = (data.teamId + 1) % 2;
-                game.roundBooks[data.renigBook - 1].checked = 1;
-                const book = game.roundBooks[data.renigBook - 1];
+                data.renigBook.checked = 1;
+                const book = data.renigBook;
                 var fRenig = false;
                 if (book.renigIndexs.length > 0) {
                     if (game.gameType === 'solo') {
@@ -1036,8 +1072,6 @@ class firebaseServices {
                 // this.sendToAll('renigResult', result);
                 this.updateGame(data.roomid, game, (res) => {
                     if (res.isSuccess) {
-                        room = res.response.data()
-                        game = room.game
                         game.renig--;
                         if (game.renig === 0) {
                             if ((game.turnIndex / 4) === 13) {
@@ -1062,16 +1096,17 @@ class firebaseServices {
             })
     }
 
-    finishRound = (roomid, callback) => {
+    finishRound = (roomid, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
             .get()
             .then(snapshot => {
                 let room = snapshot.data()
-                let game = room.game
+                let game = Object.assign({}, room.game);
                 var maxScore = 0;
                 var minScore = 0;
+                console.log('Finish Round', roomid, game);
                 if (game.gameType === 'partner') {
                     maxScore = this.calculateTeamScore(game);
                 }
@@ -1080,10 +1115,12 @@ class firebaseServices {
                 }
 
                 if (maxScore >= game.winningScore) {
+                    console.log('GameOver MaxScore', roomid, game);
                     game.currentMoveStage = 'gameOver';
                     this.updateGame(roomid, game, callback);
                 }
-                else if (game.gameType === 'solo' && minScore <= this.getGameoverScore()) {
+                else if (game.gameType === 'solo' && minScore <= this.getGameoverScore(game.winningScore)) {
+                    console.log('GameOver MinScore', roomid, game);
                     game.currentMoveStage = 'gameOver';
                     this.updateGame(roomid, game, callback);
                 }
@@ -1091,13 +1128,13 @@ class firebaseServices {
                     game.dealerIndex = (game.dealerIndex + 1) % 4;
                     this.initGameForRound(game);
                     game.currentMoveStage = 'finishRound';
+                    console.log('Next Round Game: Stage => finishRound: ', roomid, game);
                     this.updateGame(roomid, game, (res) => {
                         if (res.isSuccess) {
-                            room = res.response.data()
-                            game = room.game
                             game.currentMoveStage = 'None';
                             setTimeout(() => {
                                 if (game.bidding === 0) {
+                                    console.log('Next Round Game: Stage => None: ', roomid, game);
                                     this.updateGame(roomid, game, callback);
                                 }
                             }, 2000);
@@ -1139,19 +1176,15 @@ class firebaseServices {
                             game: game
                         })
                         .then(response => {
-                            callback && callback({ isSuccess: true, response: response, message: null });
-                            console.log(`Player ${user} removed.`);
-                            this.restartGame();
+                            this.restartGame(roomid);
                         })
                         .catch(error => {
-                            callback && callback({ isSuccess: false, response: null, message: error });
                             console.error(error)
                         })
 
                 }
             })
             .catch(error => {
-                callback && callback({ isSuccess: false, response: null, message: error });
                 console.error(error)
             })
     }

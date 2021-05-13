@@ -9,6 +9,10 @@ import SimpleButton from '../common/SimpleButton';
 
 export default class GameOver extends React.Component {
 
+    constructor(props) {
+        super(props);
+        this.points = props.route.params?.points??0;
+    }
     render() {
         return(
             <SafeAreaView style={{flex:1}}>
@@ -20,7 +24,7 @@ export default class GameOver extends React.Component {
                     <View style={styles.pointsView}>
                         <View style={{flexDirection: 'row',justifyContent:'space-between',width:'70%',}}>
                             <Text style={styles.text}>POINTS</Text>
-                            <Text style={styles.text}>263 Points</Text>
+                            <Text style={styles.text}>{this.points} Points</Text>
                         </View>
                         <View style={{flexDirection: 'row',justifyContent:'space-between',width:'70%',marginTop:'7%'}}>
                             <Text style={styles.text}>AWARDS</Text>

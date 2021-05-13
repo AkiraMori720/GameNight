@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import { Modal, Picker, Animated, Easing, View, Text, StyleSheet,ImageBackground,  TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
+import { Modal, Animated, Easing, View, Text, StyleSheet,ImageBackground,  TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
+import { Picker} from '@react-native-community/picker';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
@@ -8,7 +9,17 @@ import SimpleButton from '../common/SimpleButton';
 import { cards, cardLoweredWidth, cardLoweredHeight } from '../constants/cards'
 import gameServices from '../firebase/gameService';
 import firestore from '@react-native-firebase/firestore';
+import database from '@react-native-firebase/database';
+import {getCharacterAvatar} from "../common/character";
+import {PLAYER_PROPS} from "../constants/constants";
 
+const POS_SOUTH = 0;
+const POS_WEST = 1;
+const POS_NORTH = 2;
+const POS_EAST = 3;
+
+const CHARACTER_WIDTH = 64;
+const CHARACTER_HEIGHT = 64;
 
 class Original extends React.Component {
 
@@ -16,6 +27,7 @@ class Original extends React.Component {
         super(props);
         this.state = {
             game: {},
+            players: [],
             showBid: false,
             showBlindBid: false,
             showRenig: false,
@@ -43,6 +55,17 @@ class Original extends React.Component {
             (nextProps.preference !== undefined && nextProps.auth !== undefined))) {
             const mode = Math.floor(Math.random() * 2)
             const randomMode = mode === 0 ? 'solo' : 'partner'
+
+            const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
+            let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
+            let config = {
+                character,
+                skinColor,
+                nailColor,
+                accessory,
+                spadezDeck,
+                spadezTable,
+            }
             const data = {
                 username: nextProps.auth.username,
                 userid: nextProps.auth.userid,
@@ -50,10 +73,12 @@ class Original extends React.Component {
                 gameStyle: nextProps.preference.gameStyle,
                 gameLobby: nextProps.preference.gameLobby,
                 winningScore: nextProps.preference.gameStyle === 'solo' ? nextProps.preference.soloPoints : nextProps.preference.partnerPoints,
+                config
             }
             // this.socket.emit('joinGame', data)
             gameServices.joinGame(data, (res) => {
                 if (res.isSuccess) {
+                    this.setPresenceHook(res.response.roomid, auth.userid);
                     this.setState({ roomid: res.response.roomid })
                     this.playGame(res.response.roomid)
                 }
@@ -67,24 +92,48 @@ class Original extends React.Component {
     componentDidMount() {
         const preference = this.props.preference
         const auth = this.props.auth
-        const { roomid, fPrivate, gameType, gameStyle, gameLobby, winningScore } = this.state
+        const { roomid, fPrivate } = this.state
 
         this.trickAnimate = []
 
         if (fPrivate !== true && roomid !== undefined && roomid !== null) {
+            const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
+            let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
+            let config = {
+                character,
+                skinColor,
+                nailColor,
+                accessory,
+                spadezDeck,
+                spadezTable,
+            }
             const data = {
                 userid: auth.userid,
                 username: auth.username,
                 roomid,
+                config
             }
             gameServices.joinPrivateGame(data, (res) => {
-                if (res.isSuccess) { this.playGame(roomid) }
+                if (res.isSuccess) {
+                    this.setPresenceHook(res.response.roomid, auth.userid);
+                    this.playGame(roomid);
+                }
                 else { console.log(res.message) }
             })
         }
         else if (fPrivate !== true && preference !== undefined && auth !== undefined) {
             const mode = Math.floor(Math.random() * 2)
-            const randomMode = mode == 0 ? 'solo' : 'partner'
+            const randomMode = mode === 0 ? 'solo' : 'partner'
+            const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
+            let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
+            let config = {
+                character,
+                skinColor,
+                nailColor,
+                accessory,
+                spadezDeck,
+                spadezTable,
+            }
             const data = {
                 username: auth.username,
                 userid: auth.userid,
@@ -92,10 +141,12 @@ class Original extends React.Component {
                 gameStyle: preference.gameStyle,
                 gameLobby: preference.gameLobby,
                 winningScore: preference.gameStyle === 'solo' ? preference.soloPoints : preference.partnerPoints,
+                config
             }
             // this.socket.emit('joinGame', data)
             gameServices.joinGame(data, (res) => {
                 if (res.isSuccess) {
+                    this.setPresenceHook(res.response.roomid, auth.userid);
                     this.setState({ roomid: res.response.roomid })
                     this.playGame(res.response.roomid)
                 }
@@ -112,14 +163,43 @@ class Original extends React.Component {
 
     componentWillUnmount() {
         if (this.state.roomid) {
-            this.subscriber();
-            gameServices.removePlayer(this.state.roomid, this.props.auth.userid)
+            this.unSubscriber();
+            if(this.state.roomid){
+                this.removePresenceHook(this.state.roomid, this.props.auth.userid);
+                gameServices.removePlayer(this.state.roomid, this.props.auth.userid);
+            }
         }
+    }
+
+    removePresenceHook = (roomId, userId) => {
+        const reference = database().ref(`/online/${roomId}/${userId}`);
+        if(reference){
+            reference.remove().then(() => { console.log(`Remove Room User Presence Room: ${roomId} User: ${userId}`)}).catch(() => {});
+        }
+    }
+
+    setPresenceHook = (roomId, userId) => {
+        const oldRoomId = this.state.roomid;
+
+        // Unset presence of user in old room.
+        if(oldRoomId && oldRoomId !== roomId){
+            this.removePresenceHook(oldRoomId, userId);
+        }
+
+        const reference = database().ref(`/online/${roomId}/${userId}`);
+
+        // Set the /users/:userId value to true
+        reference.set(true).then(() => console.log('Online presence set'));
+
+        // Remove the node whenever the client disconnects
+        reference
+            .onDisconnect()
+            .remove().then(() => {});
     }
 
     playGame = (roomid) => {
         ///useEffect(() => {
-            this.subscriber = firestore()
+            this.unSubscriber = firestore()
             ///return firestore()
                 .collection('rooms')
                 .doc(roomid)
@@ -127,8 +207,8 @@ class Original extends React.Component {
                     let room = snapshot.data()
                     const { myPosition, teamId, selectedBid } = this.state
 
-                    if (room.started) {
-                        let game = room.game
+                    if (room && room.started) {
+                        let game = room.game;
                         const playerId = (game.turnIndex + game.leadIndex) % 4
                         if ((game.renig && game.currentMoveStage !== 'renigResult') || game.bidding > 0) {
                             // this.sendToAll('updatedGame', this.game);
@@ -151,9 +231,15 @@ class Original extends React.Component {
                             }), () =>{
                                 for (let index = 0; index < game.players.length; index++) {
                                     let player = game.players[index];
+                                    // Set character`s position
+                                    let characterPosition = this.setCharacterPosition(index, myPos);
+                                    player.style = {
+                                        left: characterPosition.left,
+                                        top: characterPosition.top,
+                                    }
                                     // Animate the cards dealt to each player
-                                    for (var i = 0; i < player.cards.length; i++) {
-                                        var cardLocation = this.setStartPosition(index, i, myPos);
+                                    for (let i = 0; i < player.cards.length; i++) {
+                                        let cardLocation = this.setStartPosition(index, i, myPos);
                                         player.cards[i].positionIndex = i;
                                         player.cards[i].isClickable = false;
                                         player.cards[i].isFlippedUp = false;
@@ -171,12 +257,13 @@ class Original extends React.Component {
                                 }
                                 for (let index = 0; index < game.players.length; index++) {
                                     let player = game.players[index];
-                                    let flipUp = (index === myPos) ? true : false;
+                                    let flipUp = (index === myPos);
                                     this.animatePlayerHandCardsIntoPosition(player, flipUp, false, 50);
                                 }
     
                                 this.setState(prevState => ({
                                     game: game,
+                                    players: game.players,
                                     myPosition: myPos,
                                     teamId: teamId
                                 }), () => {
@@ -241,7 +328,7 @@ class Original extends React.Component {
                                     }))
                                 }
                                 else {
-                                    if (game.gameType === 'partner' && game.teams[teamId].blind == 2) {
+                                    if (game.gameType === 'partner' && game.teams[teamId].blind === 2) {
                                         const data = {
                                             roomid: this.state.roomid,
                                             playerId: playerId,
@@ -282,8 +369,8 @@ class Original extends React.Component {
                                     {
                                         for (let index = 0; index < game.players.length; index++) {
                                             let player = game.players[index];
-                                            let flipUp = (index === this.state.myPosition) ? true : false;
-                                            let isClickable = (index === this.state.myPosition) && (playerId === this.state.myPosition) ? true : false;
+                                            let flipUp = (index === this.state.myPosition);
+                                            let isClickable = (index === this.state.myPosition) && (playerId === this.state.myPosition);
                                             this.animatePlayerHandCardsIntoPosition(player, flipUp, isClickable, 50)
                                         }
                                         this.animateTrickCards(game)
@@ -296,7 +383,7 @@ class Original extends React.Component {
                                     {
                                         for (let index = 0; index < game.players.length; index++) {
                                             let player = game.players[index];
-                                            let flipUp = (index === this.state.myPosition) ? true : false;
+                                            let flipUp = (index === this.state.myPosition);
                                             this.animatePlayerHandCardsIntoPosition(player, flipUp, false, 50)
                                         }
                                         this.animateTrickCards(game)
@@ -321,12 +408,12 @@ class Original extends React.Component {
                                 case 'finishRound':
                                     {
                                         const player = game.players[this.state.myPosition]
-                                        if (game.gameMode === 'partner') {
+                                        if (game.gameType === 'partner') {
                                             const team = game.teams[this.state.teamId]
                                             this.setState(prevState => ({
                                                 myScore: team.gameScore,
                                                 selectedBid: -1,
-                                                showBlindBid: team.lostScore <= -100 ? true : false
+                                                showBlindBid: team.lostScore <= -100
                                             }))
                                             setTimeout(() => {
                                                 this.setState(prevState => ({
@@ -344,7 +431,7 @@ class Original extends React.Component {
                                     break;
                                 case 'gameOver':
                                     {
-                                        this.props.navigation.navigate('GameOver')
+                                        this.props.navigation.navigate('GameOver', { points: this.state.myScore })
                                     }
                                     break;
 
@@ -354,13 +441,31 @@ class Original extends React.Component {
                         }
                     }
                     else {
-                        ///console.log(`Player ${game.players.length} entered in Game`);
-                        console.log(`Player  entered in Game`);
+                        if(room){
+                            let game = room.game;
+                            const myPos = game.players.findIndex((player) => player.userid === this.props.auth.userid);
+                            let players = [];
+                            for (let index = 0; index < game.players.length; index++) {
+                                let player = game.players[index];
+                                // Set character`s position
+                                let characterPosition = this.setCharacterPosition(index, myPos);
+                                player.style = {
+                                    left: characterPosition.left,
+                                    top: characterPosition.top,
+                                }
+                                players.push(player);
+                            }
+                            this.setState({
+                                // myPosition: myPos,
+                                players
+                            });
+                            ///console.log(`Player ${game.players.length} entered in Game`);
+                            console.log(`Player entered in Game`, myPos, players);
+                        }
                     }
                 })
-                return;
             // Stop listening for updates when no longer required
-            ///return () => subscriber();
+            ///return () => unSubscriber();
         ///}, [roomid]);
     }
 
@@ -387,28 +492,45 @@ class Original extends React.Component {
                 console.log('failed: ', res.message)
             }
         })
+    }
 
+    getSpadezDeck = () => {
+        const { spadezDeck } = this.props.auth;
+        return PLAYER_PROPS.spadezDecks.find(item => item.id === spadezDeck).value;
+    }
+
+    setCharacterPosition(position, myPosition) {
+        const index = (position + 4 - myPosition) % 4
+        switch (index) {
+            case POS_SOUTH: //'South'
+                return { left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5 - 170, top: Dimensions.get('screen').height - 370 }
+            case POS_WEST: //'West',
+                return { left: 0 - CHARACTER_WIDTH * 0.5, top: 190 - CHARACTER_HEIGHT * 0.5 }
+            case POS_NORTH: //'North'
+                return { left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5, top: -10 - CHARACTER_HEIGHT * 0.5 };
+            default: //'East'
+                return { left: Dimensions.get('screen').width - cardLoweredHeight - CHARACTER_WIDTH * 0.5, top: 190 - CHARACTER_HEIGHT * 0.5 };
+        }
     }
 
     setStartPosition(position, i, myPosition) {
-        var startLeft = 0;
-        var startTop = 0;
-        var cardLocation = this.getHandCardLocation(position, i, 13);
+        let startLeft = 0;
+        let startTop = 0;
+        let cardLocation = this.getHandCardLocation(position, i, 13);
         const index = (position + 4 - myPosition) % 4
         switch (index) {
-            case 0: //'South'
+            case POS_SOUTH: //'South'
                 startLeft = Dimensions.get('screen').width * 0.5;
                 startTop = Dimensions.get('screen').height + 100;
                 break;
-            case 1: //'West',
+            case POS_WEST: //'West',
                 startLeft = -300;
                 startTop = cardLocation[1];
                 break;
-            case 2: //'North'
+            case POS_NORTH: //'North'
                 startLeft = cardLocation[0];
                 startTop = -300;
                 break;
-
             default: //'East'
                 startLeft = Dimensions.get('screen').width + 300;
                 startTop = cardLocation[1];
@@ -424,97 +546,101 @@ class Original extends React.Component {
         const index = (position + 4 - this.state.myPosition) % 4
         switch (index) {
             case 0:
-                return 'South'
-                break;
+                return POS_SOUTH;
             case 1:
-                return 'West'
-                break;
+                return POS_WEST;
             case 2:
-                return 'North'
-                break;
-
+                return POS_NORTH;
             default:
-                return 'East'
-                break;
+                return POS_EAST;
         }
     }
 
     getHandCardLocation(playerId, index, cardCount) {
-        var cardWidthHalf = cardLoweredWidth * 0.5;
-        var cardHeightHalf = cardLoweredHeight * 0.5;
+        let cardWidthHalf = cardLoweredWidth * 0.5;
+        let cardHeightHalf = cardLoweredHeight * 0.5;
         const position = this.getPosition(playerId);
         switch (position) {
-            case 'West':
-                var firstLeft = 0;
-                var lastLeft = 0;
-                var firstTop = 100;
-                var lastTop = Dimensions.get('screen').height - 490;
-                var handWidth = lastTop - firstTop;
-                var cardSpacing = handWidth / cardCount;
-                var curTop = firstTop;
-                var maxSpacing = 30;
-                if (cardSpacing > maxSpacing) {
-                    cardSpacing = maxSpacing;
-                    curTop = firstTop + (handWidth - cardSpacing * cardCount) * 0.5;
+            case POS_WEST:
+                {
+                    let firstLeft = 0;
+                    let lastLeft = 0;
+                    let firstTop = 100;
+                    let lastTop = Dimensions.get('screen').height - 490;
+                    let handWidth = lastTop - firstTop;
+                    let cardSpacing = handWidth / cardCount;
+                    let curTop = firstTop;
+                    let maxSpacing = 30;
+                    if (cardSpacing > maxSpacing) {
+                        cardSpacing = maxSpacing;
+                        curTop = firstTop + (handWidth - cardSpacing * cardCount) * 0.5;
+                    }
+                    curTop = curTop + index * cardSpacing;
+                    let curLeft = (firstLeft + lastLeft) * 0.5;
+                    return [curLeft - cardWidthHalf, curTop - cardHeightHalf, 90];
                 }
-                curTop = curTop + index * cardSpacing;
-                curLeft = (firstLeft + lastLeft) * 0.5;
-                return [curLeft - cardWidthHalf, curTop - cardHeightHalf, 90];
-            case 'North':
-                var firstLeft = wp(80) * 0.5 - 110//Dimensions.get('screen').width * 0.5 - 130;
-                var lastLeft = wp(80) * 0.5 + 110//Dimensions.get('screen').width * 0.5 + 100;
-                var firstTop = 0;
-                var lastTop = 0;
-                var handWidth = lastLeft - firstLeft;
-                var cardSpacing = handWidth / (cardCount - 1);
-                var curLeft = firstLeft;
-                var maxSpacing = 30;
-                if (cardSpacing > maxSpacing) {
-                    cardSpacing = maxSpacing;
-                    curLeft = firstLeft + (handWidth - cardSpacing * (cardCount - 1)) * 0.5;
+            case POS_NORTH:
+                {
+                    let firstLeft = wp(80) * 0.5 - 110
+                    //Dimensions.get('screen').width * 0.5 - 130;
+                    let lastLeft = wp(80) * 0.5 + 110//Dimensions.get('screen').width * 0.5 + 100;
+                    let firstTop = 0;
+                    let lastTop = 0;
+                    let handWidth = lastLeft - firstLeft;
+                    let cardSpacing = handWidth / (cardCount - 1);
+                    let curLeft = firstLeft;
+                    let maxSpacing = 30;
+                    if (cardSpacing > maxSpacing) {
+                        cardSpacing = maxSpacing;
+                        curLeft = firstLeft + (handWidth - cardSpacing * (cardCount - 1)) * 0.5;
+                    }
+                    let curTop = firstTop;
+                    curLeft = curLeft + index * cardSpacing;
+                    return [curLeft - cardWidthHalf, curTop - cardHeightHalf, 0];
                 }
-                var curTop = firstTop;
-                curLeft = curLeft + index * cardSpacing;
-                return [curLeft - cardWidthHalf, curTop - cardHeightHalf, 0];
-            case 'East':
-                var firstLeft = Dimensions.get('screen').width - cardLoweredHeight;
-                var lastLeft = Dimensions.get('screen').width - cardLoweredHeight;
-                var firstTop = 100;
-                var lastTop = Dimensions.get('screen').height - 490;
-                var handWidth = lastTop - firstTop;
-                var cardSpacing = handWidth / cardCount;
-                var curTop = firstTop;
-                var maxSpacing = 30;
-                if (cardSpacing > maxSpacing) {
-                    cardSpacing = maxSpacing;
-                    curTop = firstTop + (handWidth - cardSpacing * cardCount) * 0.5;
+            case POS_EAST:
+                {
+                    let firstLeft = Dimensions.get('screen').width - cardLoweredHeight;
+                    let lastLeft = Dimensions.get('screen').width - cardLoweredHeight;
+                    let firstTop = 100;
+                    let lastTop = Dimensions.get('screen').height - 490;
+                    let handWidth = lastTop - firstTop;
+                    let cardSpacing = handWidth / cardCount;
+                    let curTop = firstTop;
+                    let maxSpacing = 30;
+                    if (cardSpacing > maxSpacing) {
+                        cardSpacing = maxSpacing;
+                        curTop = firstTop + (handWidth - cardSpacing * cardCount) * 0.5;
+                    }
+                    curTop = curTop + index * cardSpacing;
+                    let curLeft = firstLeft;
+                    return [curLeft - cardWidthHalf, curTop - cardHeightHalf, -90];
                 }
-                curTop = curTop + index * cardSpacing;
-                curLeft = firstLeft;
-                return [curLeft - cardWidthHalf, curTop - cardHeightHalf, -90];
             default:
-                var firstLeft = wp(80) * 0.5 - 110//70;
-                var lastLeft = wp(80) * 0.5 + 110//Dimensions.get('screen').width - 100;
-                var firstTop = Dimensions.get('screen').height - 420;
-                var lastTop = Dimensions.get('screen').height - 420;
-                var handWidth = lastLeft - firstLeft;
-                var cardSpacing = handWidth / (cardCount - 1);
-                var curLeft = firstLeft;
-                var maxSpacing = cardWidthHalf;
-                if (cardSpacing > maxSpacing) {
-                    cardSpacing = maxSpacing;
-                    curLeft = firstLeft + (handWidth - cardSpacing * (cardCount - 1)) * 0.5;
-                    firstTop = Dimensions.get('screen').height - 390;
-                    lastTop = Dimensions.get('screen').height - 390;
+                {
+                    let firstLeft = wp(80) * 0.5 - 110//70;
+                    let lastLeft = wp(80) * 0.5 + 110//Dimensions.get('screen').width - 100;
+                    let firstTop = Dimensions.get('screen').height - 370;
+                    let lastTop = Dimensions.get('screen').height - 370;
+                    let handWidth = lastLeft - firstLeft;
+                    let cardSpacing = handWidth / (cardCount - 1);
+                    let curLeft = firstLeft;
+                    let maxSpacing = cardWidthHalf;
+                    if (cardSpacing > maxSpacing) {
+                        cardSpacing = maxSpacing;
+                        curLeft = firstLeft + (handWidth - cardSpacing * (cardCount - 1)) * 0.5;
+                        firstTop = Dimensions.get('screen').height - 340;
+                        lastTop = Dimensions.get('screen').height - 340;
+                    }
+                    curLeft = curLeft + index * cardSpacing;
+                    let percent = (curLeft - firstLeft) / handWidth;
+                    let radius = handWidth * 3;
+                    let distanceFromCenter = handWidth * (0.5 - percent);
+                    let curveHeight = Math.sqrt(radius * radius - distanceFromCenter * distanceFromCenter) - Math.sqrt(radius * radius - handWidth * 0.5 * handWidth * 0.5);
+                    let curveRotation = Math.asin(-distanceFromCenter / radius) * 180 / Math.PI;
+                    let curTop = firstTop - curveHeight;
+                    return [curLeft - cardWidthHalf, curTop - cardHeightHalf, curveRotation];
                 }
-                curLeft = curLeft + index * cardSpacing;
-                var percent = (curLeft - firstLeft) / handWidth;
-                var radius = handWidth * 3;
-                var distanceFromCenter = handWidth * (0.5 - percent);
-                var curveHeight = Math.sqrt(radius * radius - distanceFromCenter * distanceFromCenter) - Math.sqrt(radius * radius - handWidth * 0.5 * handWidth * 0.5);
-                var curveRotation = Math.asin(-distanceFromCenter / radius) * 180 / Math.PI;
-                var curTop = firstTop - curveHeight;
-                return [curLeft - cardWidthHalf, curTop - cardHeightHalf, curveRotation];
         }
     }
 
@@ -529,7 +655,7 @@ class Original extends React.Component {
             card.positionIndex = i;
             card.isClickable = isClickable;
             card.style = {}
-            var aposition = this.getHandCardLocation(player.playerPosition, i, player.cards.length)
+            let aposition = this.getHandCardLocation(player.playerPosition, i, player.cards.length)
             card.style.left = aposition[0] //+ "px"
             card.style.top = aposition[1] //+ "px"
             card.style.transform = [{ rotate: aposition[2] + 'deg' }]
@@ -574,25 +700,25 @@ class Original extends React.Component {
     getTrickDiscardLocation(playerPostion) {
         const position = this.getPosition(playerPostion)
         switch (position) {
-            case 'South': //Dimensions.get('screen').width * 0.5
-                return [wp(80) * 0.5 - cardLoweredWidth * 0.5, 330 - cardLoweredHeight * 0.5];
-            case 'West':
-                return [wp(80) * 0.5 - cardLoweredWidth * 1.5 - 20, 230 - cardLoweredHeight * 0.5];
-            case 'North':
-                return [wp(80) * 0.5 - cardLoweredWidth * 0.5, 130 - cardLoweredHeight * 0.5];
+            case POS_SOUTH: //Dimensions.get('screen').width * 0.5
+                return [wp(80) * 0.5 - cardLoweredWidth * 0.5, 280 - cardLoweredHeight * 0.5];
+            case POS_WEST:
+                return [wp(80) * 0.5 - cardLoweredWidth * 1.5 - 20, 190 - cardLoweredHeight * 0.5];
+            case POS_NORTH:
+                return [wp(80) * 0.5 - cardLoweredWidth * 0.5, 90 - cardLoweredHeight * 0.5];
             default:
-                return [wp(80) * 0.5 + cardLoweredWidth * 0.5 + 20, 230 - cardLoweredHeight * 0.5];
+                return [wp(80) * 0.5 + cardLoweredWidth * 0.5 + 20, 190 - cardLoweredHeight * 0.5];
         }
     }
 
     getRenigCardLocation(playerPostion) {
         const position = this.getPosition(playerPostion)
         switch (position) {
-            case 'South': //Dimensions.get('screen').width * 0.5
+            case POS_SOUTH: //Dimensions.get('screen').width * 0.5
                 return [wp(80) * 0.5 - cardLoweredWidth * 0.5, wp(80) * 0.5 + cardLoweredHeight * 0.5];
-            case 'West':
+            case POS_WEST:
                 return [wp(80) * 0.5 - cardLoweredWidth * 2, wp(80) * 0.5 - cardLoweredHeight * 0.5];
-            case 'North':
+            case POS_NORTH:
                 return [wp(80) * 0.5 - cardLoweredWidth * 0.5, wp(80) * 0.5 - cardLoweredHeight * 1.5];
             default:
                 return [wp(80) * 0.5 + cardLoweredWidth, wp(80) * 0.5 - cardLoweredHeight * 0.5];
@@ -601,7 +727,7 @@ class Original extends React.Component {
 
     showRenigCards = (book) => {
         let renigBook = book
-        for (var i = 0; i < renigBook.trickCards.length; i++) {
+        for (let i = 0; i < renigBook.trickCards.length; i++) {
             let card = renigBook.trickCards[i];
             const playerPosition = (renigBook.leadIndex + i) % 4
             let loc = this.getRenigCardLocation(playerPosition);
@@ -625,13 +751,13 @@ class Original extends React.Component {
 
     animateTrickCards = (game) => {
         this.trickAnimate = []
-        for (var i = 0; i < game.trickCards.length; i++) {
+        for (let i = 0; i < game.trickCards.length; i++) {
             const playerPosition = (game.leadIndex + i) % 4
             let loc = this.getTrickDiscardLocation(playerPosition);
             console.log('pos: ', playerPosition)
             console.log('loc: ', loc)
             if (i === game.trickCards.length - 1) {
-                var start_position = this.getHandCardLocation(playerPosition, 6, 12)
+                let start_position = this.getHandCardLocation(playerPosition, 6, 12)
                 console.log('start_position: ', start_position)
                 this.trickAnimate.push(new Animated.ValueXY({ x: start_position[0], y: start_position[1] }))
                 Animated.parallel([
@@ -657,14 +783,14 @@ class Original extends React.Component {
     }
 
     getWonTrickCardsPilePostion(playerPosition) {
-        var loc = this.getHandCardLocation(playerPosition, 6, 12);
+        let loc = this.getHandCardLocation(playerPosition, 6, 12);
         const position = this.getPosition(playerPosition)
         switch (position) {
-            case 'South':
+            case POS_SOUTH:
                 return [loc[0], Dimensions.get('screen').height + 150];
-            case 'West':
+            case POS_WEST:
                 return [-150, loc[1]];
-            case 'North':
+            case POS_NORTH:
                 return [loc[0], -150];
             default:
                 return [Dimensions.get('screen').width + 150, loc[1]];
@@ -673,7 +799,7 @@ class Original extends React.Component {
 
     animateTrickResult = (game) => {
         const leadIndex = game.leadIndex
-        for (var i = 0; i < game.trickCards.length; i++) {
+        for (let i = 0; i < game.trickCards.length; i++) {
             let loc = this.getWonTrickCardsPilePostion(leadIndex);
             Animated.parallel([
                 Animated.timing(this.trickAnimate[i].x, {
@@ -749,10 +875,10 @@ class Original extends React.Component {
         console.log('selected bid: ', data)
     }
 
-    chooseBook = (book) => {
-        console.log('selected book: ', book)
+    chooseBook = (index) => {
+        console.log('selected book: ', index)
         this.setState(prevState => ({
-            selectedBook: book
+            selectedBook: index
         }))
     }
 
@@ -763,7 +889,7 @@ class Original extends React.Component {
             roomid: this.state.roomid,
             finderId: this.state.myPosition,
             teamId: this.state.teamId,
-            renigBook: this.state.selectedBook,
+            renigBook: this.state.game.roundBooks[this.state.selectedBook],
         }
         // this.socket.emit('renigGame', data)
         gameServices.renigGame(data, (res) => {
@@ -783,7 +909,7 @@ class Original extends React.Component {
             if (res.isSuccess) {
                 this.setState(prevState => ({
                     showRenig: true,
-                    avaiableBid
+                    // avaiableBid
                 }))
             }
             else {
@@ -850,6 +976,7 @@ class Original extends React.Component {
     }
 
     renderBook() {
+        let books = this.state.game.roundBooks??[];
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "rgba(0, 0, 0, 0.5)", }}>
                 <View style={{
@@ -859,12 +986,13 @@ class Original extends React.Component {
                     borderColor: '#fff',
                     borderWidth: 1,
                     borderRadius: 5,
+                    padding: 8
                 }}>
 
                     <Text style={{ fontSize: wp(3.5), fontWeight: 'bold', textAlign: 'center', marginTop: hp(2), }}>Please set the Book!</Text>
                     <Picker style={{ height: hp(20) }} selectedValue={this.state.selectedBook} onValueChange={this.chooseBook}>
-                        {this.state.avaiableBid.map(bid => {
-                            return <Picker.Item key={bid} label={`${bid}`} value={bid} />
+                        {books.map((book, i) => {
+                            return <Picker.Item key={i} label={`${i + 1}`} value={i} />
                         })}
                     </Picker>
 
@@ -898,6 +1026,7 @@ class Original extends React.Component {
                     borderColor: '#fff',
                     borderWidth: 1,
                     borderRadius: 5,
+                    padding: 8
                 }}>
 
                     <Text style={{ fontSize: wp(3.5), fontWeight: 'bold', textAlign: 'center', marginTop: hp(2), }}>Please set the Bid!</Text>
@@ -928,12 +1057,13 @@ class Original extends React.Component {
     }
 
     render() {
-        const { game, renigBook } = this.state
+        const { game, renigBook, players } = this.state
         const curPlayerId = (game.turnIndex + game.leadIndex) % 4        
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
-                    <Header onPress={() => this.props.navigation.goBack()} onPressRight={() => this.props.navigation.navigate('Setting')} bgColor={'#2f0801'} headerBorderBottomWidth={0} title={'GAMENIGHT SPADEZ'} imgLeftColor={'#fff'}  imgLeft={images.ic_back} s imgRight={images.ic_settings} />
+                    {/*<Header onPress={() => this.props.navigation.goBack()} onPressRight={() => this.props.navigation.navigate('Setting')} bgColor={'#2f0801'} headerBorderBottomWidth={0} title={'GAMENIGHT SPADEZ'} imgLeftColor={'#fff'}  imgLeft={images.ic_back} imgRight={images.ic_settings} />*/}
+                    <Header onPress={() => this.props.navigation.goBack()} bgColor={'#2f0801'} headerBorderBottomWidth={0} title={'GAMENIGHT SPADEZ'} imgLeftColor={'#fff'}  imgLeft={images.ic_back} />
                     <ImageBackground source={images.gamescreen}  style={styles.backgroundImage}>
                         <View style={styles.textView}>
                             <Text style={styles.mainText}>ORIGINAL</Text>
@@ -1004,7 +1134,7 @@ class Original extends React.Component {
                                                                         width : "100%",
                                                                         height : "100%"
                                                                     }}
-                                                                    source={card.isFlippedUp ? cards[card.image].image : images.card_back_blue} />
+                                                                    source={card.isFlippedUp ? cards[card.image].image : this.getSpadezDeck()} />
                                                             </TouchableOpacity>
                                                             :                                                        
                                                             <Image
@@ -1014,11 +1144,38 @@ class Original extends React.Component {
                                                                     height: 162 / 2,
                                                                     zIndex: 100 + j                                                                
                                                                 }, card.style]}
-                                                                source={card.isFlippedUp ? cards[card.image].image : images.card_back_blue} />
+                                                                source={card.isFlippedUp ? cards[card.image].image : this.getSpadezDeck()} />
                                                         }
                                                     </View>
                                                 )                                            
                                             })}
+                                        </View>
+                                    )
+                                })}
+                                {players && players.map((player, i) => {
+                                    return (
+                                        <View key={i}>
+                                            { player.config &&
+                                                <TouchableOpacity style={[{ flex: 1,
+                                                    position: 'absolute',
+                                                    width: 64,
+                                                    height: 64,
+                                                    zIndex: 300,
+                                                    borderRadius: 48,
+                                                    padding: 2,
+                                                }, player.style, curPlayerId === player.playerPosition?styles.curPlayer:{}]} onPress={() => {}} >
+                                                    <>
+                                                        <Image
+                                                            style={{
+                                                                width : "100%",
+                                                                height : "100%",
+                                                                borderRadius: 48
+                                                            }}
+                                                            source={getCharacterAvatar(player.config.character)} />
+                                                        { i === game.dealerIndex ? <Image  style={{ position: 'absolute', width: 16, height: 16, zIndex: 400, right: 4, bottom: 4 }} source={images.ic_dealer} /> : null}
+                                                        { player.userid !== this.props.auth.userid ? <Text style={styles.playerName} ellipsizeMode={"tail"} numberOfLines={1}>{player.config.character.firstName + " " + player.config.character.lastName}</Text> : null}
+                                                    </>
+                                                </TouchableOpacity>}
                                         </View>
                                     )
                                 })}
@@ -1027,7 +1184,7 @@ class Original extends React.Component {
 
                         <View style={styles.btnView}>
                             <SimpleButton                        
-                                onPress={() => this.findRenig}
+                                onPress={this.findRenig}
                                 btnWidth={wp(40)}   
                                 btnHeight={hp(5)}                                                        
                                 textColor={'#000000'}
@@ -1036,7 +1193,7 @@ class Original extends React.Component {
                             />
                             {this.state.showBlindBid &&
                                 <SimpleButton                        
-                                    onPress={() => this.setBlindBid}
+                                    onPress={this.setBlindBid}
                                     btnWidth={wp(40)}    
                                     btnHeight={hp(5)}                           
                                     textColor={'#000000'}
@@ -1071,7 +1228,12 @@ class Original extends React.Component {
                             visible={this.state.showRenigResult}
                             transparent={true}
                             animationType="fade"
-                            onRequestClose={this.closeRenigBook}
+                            onRequestClose={() =>
+                                this.setState({
+                                    renigBook: {},
+                                    showRenigResult: false,
+                                    renigId: -1})
+                            }
                         >
                             {this.renderRenigBook()}
                         </Modal>
@@ -1158,8 +1320,18 @@ const styles = StyleSheet.create({
     },
     touchRecorder: {
         //marginBottom: hp(10)
+    },
+    playerName: {
+        fontSize: 12,
+        fontFamily: 'Montserrat-Bold',
+        color: '#fff',
+        textAlign: 'center',
+        paddingBottom: 4,
+    },
+    curPlayer: {
+        borderWidth: 3,
+        borderColor: '#E83528',
     }
-
 });
 
 const mapDispatchToProps = (dispatch) => ({
