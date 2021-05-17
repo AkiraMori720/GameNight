@@ -59,17 +59,15 @@ class Setting extends React.Component {
     onNavigate (id){
         console.log("ID-->",id);
         if(id===0){
-            this.props.navigation.navigate('MarketPlace')
 
         }else if(id===1){
-
             this.props.navigation.navigate('GamePreferences')
         }
         else if (id===2) {
-            this.props.navigation.navigate('MarketPlace')
+
         }
         else if (id===3) {
-            this.props.navigation.navigate('Report')
+
         }
         else if (id===4) {
             this.props.navigation.navigate('Terms')

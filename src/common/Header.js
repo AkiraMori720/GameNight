@@ -54,7 +54,8 @@ const styles= StyleSheet.create({
         // justifyContent:'space-between',
         height: hp(7),
         borderBottomWidth:2,
-        borderColor:'#E83528'
+        borderColor:'#E83528',
+        zIndex: 100
     },
     img: {
         height:hp(6),

@@ -26,10 +26,7 @@ class Introduction extends React.Component {
                 <SafeAreaView style={{flex: 1}}>
                     <View style={styles.mainContainer}>
                         <Header
-                            onPress={() => {
-                                this.setState({showVideo: false});
-                                this.props.navigation.navigate('UserProfile')
-                            }}
+                            onPress={this.start}
                             onPressRight={() => {
                                 this.setState({showVideo: false});
                                 this.props.navigation.navigate('Setting')
@@ -50,7 +47,7 @@ class Introduction extends React.Component {
                                 resizeMode='stretch'
                                 onBuffer={this.onBuffer}                // Callback when remote video is buffering
                                 onEnd={this.onEnd}                      // Callback when playback finishes
-                                onError={this.videoError}               // Callback when video cannot be loaded
+                                onError={() => {}}               // Callback when video cannot be loaded
                                 style={styles.backgroundVideo} />
                             <View style={{position:'absolute', flexDirection :'row',justifyContent:'center', alignItems:'flex-end', top:hp(70), left:wp(20)}}>
                                 <SimpleButton                        

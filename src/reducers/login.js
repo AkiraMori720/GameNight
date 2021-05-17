@@ -64,10 +64,7 @@ export default function login(state = initialState, action) {
     case types.LOGOUT:
       return initialState;
     case types.USER.SET:
-      return {
-        ...state,
-        profile: action.user
-      };
+      return Object.assign({}, state, { profile: action.user });
     default:
       return state;
   }

@@ -18,10 +18,10 @@ import {
     updatePreferenceStore as updatePreferenceStoreAction,
 } from '../actions/preference'
 import apiService from "../firebase/FirebaseHelper";
-import AsyncStorage from "@react-native-community/async-storage";
 import { setUser as setUserAction } from "../actions/login";
 import {getCharacterAvatar} from "../common/character";
 import {showToast} from "../common/info";
+import Character from "../Component/Character";
 
 class UserProfile extends React.Component {
     constructor(props) {
@@ -82,8 +82,7 @@ class UserProfile extends React.Component {
         }
         apiService.updateProfileForUser(auth.user,{characterSelectedId: characterId}, (res) => {
             if (res.isSuccess) {
-                AsyncStorage.setItem('USER', JSON.stringify(res.response));
-                setUser(res.response);
+
             } else {
                 console.log('error', res.message);
                 showToast('Saving Profile Failed!');
@@ -112,8 +111,6 @@ class UserProfile extends React.Component {
 
         apiService.updateProfileForUser(auth.user, { characterSelectedId: newSelectedId, characters: newCharacters }, (res) => {
             if(res.isSuccess){
-                AsyncStorage.setItem('USER', JSON.stringify(res.response));
-                setUser(res.response);
                 if(newCharacters.length === 0){
                     this.props.navigation.navigate('EditProfile');
                 }
@@ -128,6 +125,7 @@ class UserProfile extends React.Component {
     render() {
         const { characterSelectedId, characters, character } = this.state;
         const characterAvatar = getCharacterAvatar(character);
+        console.log('characterAvatar', characters, characterAvatar);
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
@@ -150,7 +148,16 @@ class UserProfile extends React.Component {
                                     paddingBottom: wp(0),
                                 }}>Crew</Text>
                             </View>
-                            <Image style={styles.img} source={characterAvatar} />
+                            <View style={styles.img}>
+                                <Character
+                                    gender={character.gender}
+                                    hair={character.hair}
+                                    eyerow={character.eyerow}
+                                    eye={character.eye}
+                                    nose={character.nose}
+                                    lip={character.lip}
+                                />
+                            </View>
                             <TouchableOpacity onPress={this.onEditPlayer}>
                                 <Image style={styles.icon} source={images.ic_edit_2} />
                             </TouchableOpacity>
@@ -193,12 +200,21 @@ class UserProfile extends React.Component {
                             </View>
                             <View style={{ height: '38%', marginTop: '4%', marginLeft: '3%', }}>
                                 <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} >
-                                    {characters.map((character, i) => {
+                                    {characters.map((c, i) => {
                                         return (
-                                            <TouchableOpacity style={styles.avatarContainer} key={i} onPress={() => this.selectAvatar(character.id)}>
+                                            <TouchableOpacity style={styles.avatarContainer} key={i} onPress={() => this.selectAvatar(c.id)}>
                                                 <>
-                                                    <Image style={styles.image} source={getCharacterAvatar(character)} />
-                                                    {  characterSelectedId === character.id ? <Image style={[styles.genderCheck,{height:hp(5)},{width: wp(5), resizeMode: 'contain'}]} source={images.ic_player_check} /> : null}
+                                                    <View style={styles.selectImg}>
+                                                        <Character
+                                                            gender={c.gender}
+                                                            hair={c.hair}
+                                                            eyerow={c.eyerow}
+                                                            eye={c.eye}
+                                                            nose={c.nose}
+                                                            lip={c.lip}
+                                                        />
+                                                    </View>
+                                                    {  characterSelectedId === c.id ? <Image style={[styles.genderCheck,{height:hp(5)},{width: wp(5), resizeMode: 'contain'}]} source={images.ic_player_check} /> : null}
                                                 </>
                                             </TouchableOpacity>
                                         )})}
@@ -245,8 +261,13 @@ const styles = StyleSheet.create({
     img: {
         height: hp(15),
         width: wp(25),
-        resizeMode: 'contain',
+        alignItems: 'center',
         // tintColor:'#fff',
+    },
+    selectImg: {
+        height: 60,
+        width: 60,
+        alignItems: 'center',
     },
     icon: {
         height: hp(7),
@@ -284,7 +305,8 @@ const styles = StyleSheet.create({
         marginEnd: wp(3),
     },
     image: {
-        width: '80%',
+        width: 60,
+        height: 60,
         resizeMode: 'contain',
     },
     viewAvatar: {

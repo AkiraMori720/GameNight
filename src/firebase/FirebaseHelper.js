@@ -6,10 +6,13 @@ import storage from '@react-native-firebase/storage';
 import { LoginManager, AccessToken } from 'react-native-fbsdk';
 import { GoogleSignin } from '@react-native-community/google-signin';
 import moment from 'moment'
+import messaging from "@react-native-firebase/messaging";
 
 GoogleSignin.configure({
     webClientId: '657946000234-6f1kng83oolvm5g5vcoe77intsvd67oj.apps.googleusercontent.com',
  });
+
+const SERVER_KEY = 'AAAAmTCjO2o:APA91bHWVmkBuCyoIMn6PVYEcj0FcnY4uN3O9Id9VECkCaQYeksRNCK_AR_tLmVAd0JI8BhXBEJbGkVy2nljXM2mGAp88IuDSKQW92yuMQrg-1tEm2y3b2678Bi75aUaXYQBJGE_czxq';
 
 class firebaseServices {
     signinWithGoogle = async function (callback) {
@@ -714,6 +717,55 @@ class firebaseServices {
                 }
                 callback && callback({ isSuccess: false, response: null, message: message });
             })
+    }
+
+    setFcmToken = async (userid) => {
+        const authStatus = await messaging().requestPermission();
+        const enabled = authStatus === messaging.AuthorizationStatus.AUTHORIZED || authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        if (enabled) {
+            const fcmToken = await messaging().getToken();
+            if (fcmToken) {
+                console.log("Your Firebase Token is:", fcmToken);
+                return firestore()
+                    .collection("userProfile")
+                    .doc(userid)
+                    .update({
+                        fcmToken: fcmToken,
+                    });
+            }
+        }
+        console.log("Failed", "No token received");
+        return null
+    }
+
+    sendNotifications = async (roomId, tokens, name, data) => {
+        for(let i=0; i<tokens.length; i++){
+            let params = {
+                to:tokens[i],
+                data,
+                notification:{
+                    body:`Let us play a game together!`,
+                    title:`${name}`
+                }
+            };
+
+            let options = {
+                method: 'POST',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
+                    'Authorization': `key=${SERVER_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(params)
+            };
+            console.log('send notification: ', options);
+            try{
+                fetch('https://fcm.googleapis.com/fcm/send', options);
+            } catch (e) {
+                console.log('Send Notification Error:', e);
+            }
+        }
+        return true;
     }
 }
 

@@ -1,17 +1,45 @@
 import React from 'react';
-import { connect } from 'react-redux'
-import { Modal, Animated, Easing, View, Text, StyleSheet,ImageBackground,  TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
-import { Picker} from '@react-native-community/picker';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import {connect} from 'react-redux'
+import {
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    ImageBackground,
+    Modal,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import {Picker} from '@react-native-community/picker';
+import {heightPercentageToDP as hp, widthPercentageToDP as wp} from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
 import SimpleButton from '../common/SimpleButton';
-import { cards, cardLoweredWidth, cardLoweredHeight } from '../constants/cards'
+import {cardLoweredHeight, cardLoweredWidth, cards} from '../constants/cards'
 import gameServices from '../firebase/gameService';
 import firestore from '@react-native-firebase/firestore';
 import database from '@react-native-firebase/database';
 import {getCharacterAvatar} from "../common/character";
 import {PLAYER_PROPS} from "../constants/constants";
+import {RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, mediaDevices} from "react-native-webrtc";
+import Character from "../Component/Character";
+
+export const peerConnectionConfig = {
+    'iceServers': [
+        {
+            urls: 'stun:stun.l.google.com:19302',
+        },
+        {
+            urls: 'stun:stun1.l.google.com:19302',
+        },
+        {
+            urls: 'stun:stun2.l.google.com:19302',
+        },
+    ]
+};
 
 const POS_SOUTH = 0;
 const POS_WEST = 1;
@@ -25,6 +53,9 @@ class Original extends React.Component {
 
     constructor(props) {
         super(props);
+        this.localStream = null;
+        this.connectionUnSubscribe = {};
+        this.connectionCandidateUnSubscribe = {};
         this.state = {
             game: {},
             players: [],
@@ -45,7 +76,10 @@ class Original extends React.Component {
             gameType: props.route.params?.type,
             gameStyle: props.route.params?.style,
             gameLobby: props.route.params?.lobby,
-            winningScore: props.route.params?.score
+            winningScore: props.route.params?.score,
+            toggleMic: true,
+            remoteStreams: {},
+            webRTCConnections: {}
         }
     }
 
@@ -96,7 +130,7 @@ class Original extends React.Component {
 
         this.trickAnimate = []
 
-        if (fPrivate !== true && roomid !== undefined && roomid !== null) {
+        if (fPrivate === true && roomid !== undefined && roomid !== null) {
             const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
             let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
             let config = {
@@ -148,7 +182,9 @@ class Original extends React.Component {
                 if (res.isSuccess) {
                     this.setPresenceHook(res.response.roomid, auth.userid);
                     this.setState({ roomid: res.response.roomid })
-                    this.playGame(res.response.roomid)
+                    this.joinRoom(res.response.roomid).then(() => {
+                        this.playGame(res.response.roomid);
+                    })
                 }
                 else {
                     console.log(res.message)
@@ -163,13 +199,219 @@ class Original extends React.Component {
 
     componentWillUnmount() {
         if (this.state.roomid) {
-            this.unSubscriber();
+            if(this.unSubscriber){
+                this.unSubscriber();
+            }
+            this.closeWebrtcConnections();
             if(this.state.roomid){
                 this.removePresenceHook(this.state.roomid, this.props.auth.userid);
                 gameServices.removePlayer(this.state.roomid, this.props.auth.userid);
             }
         }
     }
+
+    closeWebrtcConnections(){
+        if(this.localStream){
+            this.localStream.getTracks().forEach(item => item.stop());
+            this.localStream.release();
+            this.localStream = null;
+        }
+
+        Object.keys(this.state.webRTCConnections).forEach(key => {
+            if(this.connectionUnSubscribe[key]){
+                this.connectionUnSubscribe[key]();
+                delete this.connectionUnSubscribe[key];
+            }
+            if(this.connectionCandidateUnSubscribe[key]){
+                this.connectionCandidateUnSubscribe[key]();
+                delete this.connectionCandidateUnSubscribe[key];
+            }
+            let peer = this.state.webRTCConnections[key];
+            peer.onicecandidate = null;
+            peer.onaddstream = null;
+            peer.close();
+        });
+
+        this.setState({ webRTCConnections: {}, remoteStreams: {} });
+    }
+
+    removeConnection = async (connectionIds) => {
+        const { webRTCConnections, remoteStreams } = this.state;
+        connectionIds.forEach( id => {
+            if(remoteStreams[id]){
+                delete remoteStreams[id];
+            }
+            if(webRTCConnections[id]){
+                webRTCConnections[id].onicecandidate = null;
+                webRTCConnections[id].onaddstream = null;
+                webRTCConnections[id].close();
+                delete webRTCConnections[id];
+            }
+            if(this.connectionUnSubscribe[id]){
+                this.connectionUnSubscribe[id]();
+                delete this.connectionUnSubscribe[id];
+            }
+            if(this.connectionCandidateUnSubscribe[id]){
+                this.connectionCandidateUnSubscribe[id]();
+                delete this.connectionCandidateUnSubscribe[id];
+            }
+
+            gameServices.deleteWebRTCConnection(id);
+        })
+        this.setState({ webRTCConnections, remoteStreams });
+        console.log('removeConnection', connectionIds, webRTCConnections, remoteStreams);
+    }
+
+    joinRoom = async (roomId) => {
+        await this.startLocalStream();
+
+        const snapshot = await firestore()
+            .collection('rooms')
+            .doc(roomId)
+            .get();
+        const room = snapshot.data();
+        const userId = this.props.auth.userid;
+
+        for (let index = 0; index < room.game.players.length; index++) {
+            let player = room.game.players[index];
+            if(player.userid === userId){ return; }
+
+            let connectionId = this.getPeerConnectionId(userId, player.userid);
+
+            if(!this.state.webRTCConnections[connectionId]){
+                await this.requestJoin(connectionId);
+            }
+        }
+    }
+
+    requestJoin = async (connectionId) => {
+        let newConnections = this.state.webRTCConnections;
+        newConnections[connectionId] = new RTCPeerConnection(peerConnectionConfig);
+
+        const connectionRef = firestore().collection('webrtcConnections').doc(connectionId);
+        const callerCandidatesCollection = connectionRef.collection('callerCandidates');
+
+        //Wait for their video stream
+        newConnections[connectionId].onicecandidate = function (event) {
+            if (event.candidate != null) {
+                console.log('onicecandidate');
+                // webRTCSdk.signal(connectionId, JSON.stringify({'ice': event.candidate}));
+                callerCandidatesCollection.add(event.candidate.toJSON());
+            }
+        }
+
+        newConnections[connectionId].onaddstream = (event) => {
+            this.gotRemoteStream(event, connectionId)
+        }
+
+        //Add the local video stream
+        newConnections[connectionId].addStream(this.localStream);
+
+        newConnections[connectionId].createOffer().then((offer) => {
+            newConnections[connectionId].setLocalDescription(offer).then(() => {
+                // console.log(connections);
+                // webRTCSdk.signal(id, JSON.stringify({'offer': connections[id].localDescription}));
+                connectionRef.set({ offer }).then(() => {
+
+                    // wait answer
+                    this.connectionUnSubscribe[connectionId] = connectionRef.onSnapshot(async snapshot => {
+                        const data = snapshot.data();
+                        if (!newConnections[connectionId].currentRemoteDescription && data.answer) {
+                            console.log('answer hook');
+                            await connectionRef.update({ answer: null });
+                            const rtcSessionDescription = new RTCSessionDescription(data.answer);
+                            await newConnections[connectionId].setRemoteDescription(rtcSessionDescription);
+                        }
+                    });
+
+                    this.connectionCandidateUnSubscribe[connectionId] = connectionRef.collection('calleeCandidates').onSnapshot(snapshot => {
+                        snapshot.docChanges().forEach(async change => {
+                            if (change.type === 'added') {
+                                let data = change.doc.data();
+                                console.log('add candidates hook');
+                                await newConnections[connectionId].addIceCandidate(new RTCIceCandidate(data));
+                            }
+                        });
+                    });
+                })
+            }).catch(e => console.log(e));
+        });
+
+        this.setState({ webRTCConnections: newConnections });
+        console.log('add connection', connectionId);
+    }
+
+    acceptJoin = async (connectionId) => {
+        const connectionRef = firestore().collection('webrtcConnections').doc(connectionId);
+        if(!connectionRef) {
+            return setTimeout(() => this.acceptJoin(connectionId), 1000);
+        }
+
+        const connectionSnap = await connectionRef.get();
+        if(!connectionSnap.data()) {
+            return setTimeout(() => this.acceptJoin(connectionId), 1000);
+        }
+        let offer = connectionSnap.data().offer;
+        console.log('connection hook', offer);
+
+        if(!offer){
+            return setTimeout(() => this.acceptJoin(connectionId), 1000);
+        }
+
+        console.log('accepted connection hook', offer);
+        let newConnections = this.state.webRTCConnections;
+
+        newConnections[connectionId] = new RTCPeerConnection(peerConnectionConfig);
+
+        const callerCandidatesCollection = connectionRef.collection('callerCandidates');
+
+        //Wait for their video stream
+        newConnections[connectionId].onicecandidate = function (event) {
+            if (event.candidate != null) {
+                console.log('onicecandidate');
+                // webRTCSdk.signal(connectionId, JSON.stringify({'ice': event.candidate}));
+                callerCandidatesCollection.add(event.candidate.toJSON());
+            }
+        }
+
+        newConnections[connectionId].onaddstream = (event) => {
+            this.gotRemoteStream(event, connectionId)
+        }
+
+        //Add the local video stream
+        newConnections[connectionId].addStream(this.localStream);
+
+        console.log('add connection in receive hook', connectionId);
+
+        await newConnections[connectionId].setRemoteDescription(new RTCSessionDescription(offer));
+
+        const answer = await newConnections[connectionId].createAnswer();
+        await newConnections[connectionId].setLocalDescription(answer);
+
+        const roomWithAnswer = {answer, offer: null};
+        await connectionRef.update(roomWithAnswer);
+
+        console.log('send answer');
+
+        connectionRef.collection('callerCandidates').onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(async change => {
+                if (change.type === 'added') {
+                    console.log('onicecandidate');
+                    let data = change.doc.data();
+                    await newConnections[connectionId].addIceCandidate(new RTCIceCandidate(data));
+                }
+            });
+        });
+        this.setState({webRTCConnections: newConnections});
+    }
+
+    startLocalStream = async () => {
+        const constraints = {
+            audio: true,
+            video: false,
+        };
+        this.localStream = await mediaDevices.getUserMedia(constraints);
+    };
 
     removePresenceHook = (roomId, userId) => {
         const reference = database().ref(`/online/${roomId}/${userId}`);
@@ -198,137 +440,76 @@ class Original extends React.Component {
     }
 
     playGame = (roomid) => {
-        ///useEffect(() => {
-            this.unSubscriber = firestore()
-            ///return firestore()
-                .collection('rooms')
-                .doc(roomid)
-                .onSnapshot(snapshot => {
-                    let room = snapshot.data()
-                    const { myPosition, teamId, selectedBid } = this.state
+    this.unSubscriber = firestore()
+        .collection('rooms')
+        .doc(roomid)
+        .onSnapshot(async snapshot => {
+            let room = snapshot.data()
+            const { myPosition, teamId, selectedBid } = this.state
 
-                    if (room && room.started) {
-                        let game = room.game;
-                        const playerId = (game.turnIndex + game.leadIndex) % 4
-                        if ((game.renig && game.currentMoveStage !== 'renigResult') || game.bidding > 0) {
-                            // this.sendToAll('updatedGame', this.game);
-                            return;
+            if (room && room.started) {
+                let game = room.game;
+                const playerId = (game.turnIndex + game.leadIndex) % 4
+                if ((game.renig && game.currentMoveStage !== 'renigResult') || game.bidding > 0) {
+                    // this.sendToAll('updatedGame', this.game);
+                    return;
+                }
+                if (myPosition < 0) {//start
+                    let teamId = -1;
+                    const myPos = game.players.findIndex((player) => player.userid === this.props.auth.userid)
+                    if (game.gameType === 'partner') {
+                        for (let index = 0; index < game.teams.length; index++) {
+                            if (game.teams[index].players.findIndex(player => player === myPos) >= 0) {
+                                teamId = index
+                                break;
+                            }
                         }
-                        if (myPosition < 0) {//start
-                            let teamId = -1;
-                            const myPos = game.players.findIndex((player) => player.userid === this.props.auth.userid)
-                            if (game.gameType === 'partner') {
-                                for (let index = 0; index < game.teams.length; index++) {
-                                    if (game.teams[index].players.findIndex(player => player === myPos) >= 0) {
-                                        teamId = index
-                                        break;
-                                    }
+                    }
+                    this.setState(prevState=>({
+                        myPosition : myPos,
+                        teamId : teamId
+                    }), () =>{
+                        for (let index = 0; index < game.players.length; index++) {
+                            let player = game.players[index];
+                            // Set character`s position
+                            let characterPosition = this.setCharacterPosition(index, myPos);
+                            player.style = {
+                                left: characterPosition.left,
+                                top: characterPosition.top,
+                            }
+                            // Animate the cards dealt to each player
+                            for (let i = 0; i < player.cards.length; i++) {
+                                let cardLocation = this.setStartPosition(index, i, myPos);
+                                player.cards[i].positionIndex = i;
+                                player.cards[i].isClickable = false;
+                                player.cards[i].isFlippedUp = false;
+                                player.cards[i].style = {
+                                    // position: 'absolute',
+                                    left: cardLocation.left,
+                                    top: cardLocation.top,// + "px",
+                                    // left: new Animated.Value(cardLocation.left),
+                                    // top: new Animated.Value(cardLocation.top),// + "px",
+                                    // zIndex: i + 100,
+                                    // transform: [{ rotate: new Animated.Value(0) }]
+                                    // visibility: "visible"
                                 }
                             }
-                            this.setState(prevState=>({
-                                myPosition : myPos,
-                                teamId : teamId
-                            }), () =>{
-                                for (let index = 0; index < game.players.length; index++) {
-                                    let player = game.players[index];
-                                    // Set character`s position
-                                    let characterPosition = this.setCharacterPosition(index, myPos);
-                                    player.style = {
-                                        left: characterPosition.left,
-                                        top: characterPosition.top,
-                                    }
-                                    // Animate the cards dealt to each player
-                                    for (let i = 0; i < player.cards.length; i++) {
-                                        let cardLocation = this.setStartPosition(index, i, myPos);
-                                        player.cards[i].positionIndex = i;
-                                        player.cards[i].isClickable = false;
-                                        player.cards[i].isFlippedUp = false;
-                                        player.cards[i].style = {
-                                            // position: 'absolute',
-                                            left: cardLocation.left,
-                                            top: cardLocation.top,// + "px",
-                                            // left: new Animated.Value(cardLocation.left),
-                                            // top: new Animated.Value(cardLocation.top),// + "px",
-                                            // zIndex: i + 100,
-                                            // transform: [{ rotate: new Animated.Value(0) }]
-                                            // visibility: "visible"
-                                        }
-                                    }
-                                }
-                                for (let index = 0; index < game.players.length; index++) {
-                                    let player = game.players[index];
-                                    let flipUp = (index === myPos);
-                                    this.animatePlayerHandCardsIntoPosition(player, flipUp, false, 50);
-                                }
-    
-                                this.setState(prevState => ({
-                                    game: game,
-                                    players: game.players,
-                                    myPosition: myPos,
-                                    teamId: teamId
-                                }), () => {
-                                    if (myPos === game.dealerIndex) {
-                                        if (game.players[myPos].currentRoundBid < 0) {
-                                            if (game.gameType === 'partner' && game.teams[teamId].blind == 2) {
-                                                const data = {
-                                                    roomid: this.state.roomid,
-                                                    playerId: playerId,
-                                                    teamId: this.state.teamId,
-                                                    bid: 0
-                                                }
-                                                // this.socket.emit('bid', data)
-                                                gameServices.setBid(data, (res) => { })
-                                                this.setState(prevState => ({
-                                                    selectedBid: 0,
-                                                }))
-                                            }
-                                            else {
-                                                setTimeout(() => {
-                                                    let avaiableBid = []
-                                                    for (let index = 0; index <= 13; index++) {
-                                                        avaiableBid.push(index)
-                                                    }
-                                                    this.setState(prevState => ({
-                                                        showBid: true,
-                                                        avaiableBid
-                                                    }));
-                                                }, 2000)
-                                            }
-                                        }
-                                        else {
-                                            const data = {
-                                                roomid: this.state.roomid,
-                                                playerId: playerId,
-                                                teamId: this.state.teamId,
-                                                bid: game.players[playerId].currentRoundBid
-                                            }
-                                            // this.socket.emit('bid', data)
-                                            gameServices.setBid(data, (res) => { })
-                                            this.setState(prevState => ({
-                                                selectedBid: game.players[playerId].currentRoundBid,
-                                            }))
-                                        }
-                                    }
-                                })
-                            })
                         }
-                        else if (selectedBid < 0) {//updatedGame
-                            if (playerId === this.state.myPosition) {
-                                if (game.players[playerId].currentRoundBid >= 0) {
-                                    const data = {
-                                        roomid: this.state.roomid,
-                                        playerId: playerId,
-                                        teamId: this.state.teamId,
-                                        bid: game.players[playerId].currentRoundBid
-                                    }
-                                    // this.socket.emit('bid', data)
-                                    gameServices.setBid(data, (res) => { })
-                                    this.setState(prevState => ({
-                                        selectedBid: game.players[playerId].currentRoundBid,
-                                    }))
-                                }
-                                else {
-                                    if (game.gameType === 'partner' && game.teams[teamId].blind === 2) {
+                        for (let index = 0; index < game.players.length; index++) {
+                            let player = game.players[index];
+                            let flipUp = (index === myPos);
+                            this.animatePlayerHandCardsIntoPosition(player, flipUp, false, 50);
+                        }
+
+                        this.setState(prevState => ({
+                            game: game,
+                            players: game.players,
+                            myPosition: myPos,
+                            teamId: teamId
+                        }), () => {
+                            if (myPos === game.dealerIndex) {
+                                if (game.players[myPos].currentRoundBid < 0) {
+                                    if (game.gameType === 'partner' && game.teams[teamId].blind == 2) {
                                         const data = {
                                             roomid: this.state.roomid,
                                             playerId: playerId,
@@ -342,131 +523,223 @@ class Original extends React.Component {
                                         }))
                                     }
                                     else {
-                                        let start = 0
-                                        if (game.gameType === 'partner') {
-                                            const player0 = game.teams[this.state.teamId].players[0];
-                                            const player1 = game.teams[this.state.teamId].players[1];
-                                            const currentRoundBid = this.state.myPosition !== player0 ? game.players[player0].currentRoundBid : game.players[player1].currentRoundBid;
-                                            if (currentRoundBid >= 0 && currentRoundBid < 4) {
-                                                start = 4 - currentRoundBid;
+                                        setTimeout(() => {
+                                            let avaiableBid = []
+                                            for (let index = 0; index <= 13; index++) {
+                                                avaiableBid.push(index)
                                             }
-                                        }
-                                        let avaiableBid = []
-                                        for (let index = start; index <= 13; index++) {
-                                            avaiableBid.push(index)
-                                        }
-                                        this.setState(prevState => ({
-                                            showBid: true,
-                                            avaiableBid
-                                        }));
+                                            this.setState(prevState => ({
+                                                showBid: true,
+                                                avaiableBid
+                                            }));
+                                        }, 2000)
                                     }
                                 }
+                                else {
+                                    const data = {
+                                        roomid: this.state.roomid,
+                                        playerId: playerId,
+                                        teamId: this.state.teamId,
+                                        bid: game.players[playerId].currentRoundBid
+                                    }
+                                    // this.socket.emit('bid', data)
+                                    gameServices.setBid(data, (res) => { })
+                                    this.setState(prevState => ({
+                                        selectedBid: game.players[playerId].currentRoundBid,
+                                    }))
+                                }
                             }
+                        })
+                    })
+                }
+                else if (selectedBid < 0) {//updatedGame
+                    if (playerId === this.state.myPosition) {
+                        if (game.players[playerId].currentRoundBid >= 0) {
+                            const data = {
+                                roomid: this.state.roomid,
+                                playerId: playerId,
+                                teamId: this.state.teamId,
+                                bid: game.players[playerId].currentRoundBid
+                            }
+                            // this.socket.emit('bid', data)
+                            gameServices.setBid(data, (res) => { })
+                            this.setState(prevState => ({
+                                selectedBid: game.players[playerId].currentRoundBid,
+                            }))
                         }
                         else {
-                            switch (game.currentMoveStage) {
-                                case 'ChoosingTrickCard':
-                                    {
-                                        for (let index = 0; index < game.players.length; index++) {
-                                            let player = game.players[index];
-                                            let flipUp = (index === this.state.myPosition);
-                                            let isClickable = (index === this.state.myPosition) && (playerId === this.state.myPosition);
-                                            this.animatePlayerHandCardsIntoPosition(player, flipUp, isClickable, 50)
-                                        }
-                                        this.animateTrickCards(game)
-                                        this.setState(prevState => ({
-                                            game: game
-                                        }));
-                                    }
-                                    break;
-                                case 'trickFinished':
-                                    {
-                                        for (let index = 0; index < game.players.length; index++) {
-                                            let player = game.players[index];
-                                            let flipUp = (index === this.state.myPosition);
-                                            this.animatePlayerHandCardsIntoPosition(player, flipUp, false, 50)
-                                        }
-                                        this.animateTrickCards(game)
-                                        this.setState(prevState => ({
-                                            game: game
-                                        }));
-                                    }
-                                    break;
-                                case 'trickResult':
-                                    {
-                                        this.animateTrickResult(game)
-                                    }
-                                    break;
-                                case 'renigResult':
-                                    {
-                                        this.setState(prevState => ({
-                                            renigId: game.renigResult.renig ? game.renigResult.renigId : game.renigResult.finderId
-                                        }));
-                                        this.showRenigCards(game.renigResult.book)
-                                    }
-                                    break;
-                                case 'finishRound':
-                                    {
-                                        const player = game.players[this.state.myPosition]
-                                        if (game.gameType === 'partner') {
-                                            const team = game.teams[this.state.teamId]
-                                            this.setState(prevState => ({
-                                                myScore: team.gameScore,
-                                                selectedBid: -1,
-                                                showBlindBid: team.lostScore <= -100
-                                            }))
-                                            setTimeout(() => {
-                                                this.setState(prevState => ({
-                                                    showBlindBid: false
-                                                }))
-                                            }, 3000)
-                                        }
-                                        else {
-                                            this.setState(prevState => ({
-                                                myScore: player.gameScore,
-                                                selectedBid: -1
-                                            }))
-                                        }
-                                    }
-                                    break;
-                                case 'gameOver':
-                                    {
-                                        this.props.navigation.navigate('GameOver', { points: this.state.myScore })
-                                    }
-                                    break;
-
-                                default:
-                                    break;
-                            }
-                        }
-                    }
-                    else {
-                        if(room){
-                            let game = room.game;
-                            const myPos = game.players.findIndex((player) => player.userid === this.props.auth.userid);
-                            let players = [];
-                            for (let index = 0; index < game.players.length; index++) {
-                                let player = game.players[index];
-                                // Set character`s position
-                                let characterPosition = this.setCharacterPosition(index, myPos);
-                                player.style = {
-                                    left: characterPosition.left,
-                                    top: characterPosition.top,
+                            if (game.gameType === 'partner' && game.teams[teamId].blind === 2) {
+                                const data = {
+                                    roomid: this.state.roomid,
+                                    playerId: playerId,
+                                    teamId: this.state.teamId,
+                                    bid: 0
                                 }
-                                players.push(player);
+                                // this.socket.emit('bid', data)
+                                gameServices.setBid(data, (res) => { })
+                                this.setState(prevState => ({
+                                    selectedBid: 0,
+                                }))
                             }
-                            this.setState({
-                                // myPosition: myPos,
-                                players
-                            });
-                            ///console.log(`Player ${game.players.length} entered in Game`);
-                            console.log(`Player entered in Game`, myPos, players);
+                            else {
+                                let start = 0
+                                if (game.gameType === 'partner') {
+                                    const player0 = game.teams[this.state.teamId].players[0];
+                                    const player1 = game.teams[this.state.teamId].players[1];
+                                    const currentRoundBid = this.state.myPosition !== player0 ? game.players[player0].currentRoundBid : game.players[player1].currentRoundBid;
+                                    if (currentRoundBid >= 0 && currentRoundBid < 4) {
+                                        start = 4 - currentRoundBid;
+                                    }
+                                }
+                                let avaiableBid = []
+                                for (let index = start; index <= 13; index++) {
+                                    avaiableBid.push(index)
+                                }
+                                this.setState(prevState => ({
+                                    showBid: true,
+                                    avaiableBid
+                                }));
+                            }
                         }
                     }
-                })
-            // Stop listening for updates when no longer required
-            ///return () => unSubscriber();
-        ///}, [roomid]);
+                }
+                else {
+                    switch (game.currentMoveStage) {
+                        case 'ChoosingTrickCard':
+                            {
+                                for (let index = 0; index < game.players.length; index++) {
+                                    let player = game.players[index];
+                                    let flipUp = (index === this.state.myPosition);
+                                    let isClickable = (index === this.state.myPosition) && (playerId === this.state.myPosition);
+                                    this.animatePlayerHandCardsIntoPosition(player, flipUp, isClickable, 50)
+                                }
+                                this.animateTrickCards(game)
+                                this.setState(prevState => ({
+                                    game: game
+                                }));
+                            }
+                            break;
+                        case 'trickFinished':
+                            {
+                                for (let index = 0; index < game.players.length; index++) {
+                                    let player = game.players[index];
+                                    let flipUp = (index === this.state.myPosition);
+                                    this.animatePlayerHandCardsIntoPosition(player, flipUp, false, 50)
+                                }
+                                this.animateTrickCards(game)
+                                this.setState(prevState => ({
+                                    game: game
+                                }));
+                            }
+                            break;
+                        case 'trickResult':
+                            {
+                                this.animateTrickResult(game)
+                            }
+                            break;
+                        case 'renigResult':
+                            {
+                                this.setState(prevState => ({
+                                    renigId: game.renigResult.renig ? game.renigResult.renigId : game.renigResult.finderId
+                                }));
+                                this.showRenigCards(game.renigResult.book)
+                            }
+                            break;
+                        case 'finishRound':
+                            {
+                                const player = game.players[this.state.myPosition]
+                                if (game.gameType === 'partner') {
+                                    const team = game.teams[this.state.teamId]
+                                    this.setState(prevState => ({
+                                        myScore: team.gameScore,
+                                        selectedBid: -1,
+                                        showBlindBid: team.lostScore <= -100
+                                    }))
+                                    setTimeout(() => {
+                                        this.setState(prevState => ({
+                                            showBlindBid: false
+                                        }))
+                                    }, 3000)
+                                }
+                                else {
+                                    this.setState(prevState => ({
+                                        myScore: player.gameScore,
+                                        selectedBid: -1
+                                    }))
+                                }
+                            }
+                            break;
+                        case 'gameOver':
+                            {
+                                this.props.navigation.navigate('GameOver', { points: this.state.myScore })
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+            else {
+                if(room){
+                    let game = room.game;
+                    const myPos = game.players.findIndex((player) => player.userid === this.props.auth.userid);
+                    let players = [];
+                    for (let index = 0; index < game.players.length; index++) {
+                        let player = game.players[index];
+                        // Set character`s position
+                        let characterPosition = this.setCharacterPosition(index, myPos);
+                        player.style = {
+                            left: characterPosition.left,
+                            top: characterPosition.top,
+                        }
+                        players.push(player);
+                    }
+                    this.setState({
+                        // myPosition: myPos,
+                        players
+                    });
+                    ///console.log(`Player ${game.players.length} entered in Game`);
+                    console.log(`Player entered in Game`, myPos, players);
+                }
+            }
+
+            if(room && room.game){
+                const userId = this.props.auth.userid;
+                const availableConnectionIds = [];
+                for (let index = 0; index < room.game.players.length; index++) {
+                    let player = room.game.players[index];
+                    if(player.userid === userId){ continue; }
+
+                    let connectionId = this.getPeerConnectionId(userId, player.userid);
+                    availableConnectionIds.push(connectionId);
+                    if (this.state.webRTCConnections[connectionId]) {
+                        continue;
+                    }
+
+                    this.acceptJoin(connectionId);
+                }
+
+                // Connection Check
+                const connectionIds = Object.keys(this.state.webRTCConnections);
+                const invalidConnectionIds = connectionIds.filter((id => !availableConnectionIds.includes(id)));
+                this.removeConnection(invalidConnectionIds);
+            }
+        })
+    }
+
+    getPeerConnectionId = (id1, id2) => {
+        if(id1 > id2){
+            return `${id1}${id2}`;
+        }
+        return `${id2}${id1}`;
+    }
+
+    gotRemoteStream = (event, connectionId) => {
+        console.log('====remote stream====', event, connectionId);
+        const { remoteStreams } = this.state;
+        remoteStreams[connectionId] = event.stream;
+        this.setState({ remoteStreams })
     }
 
     playerChoosePlayCard = (playerId, cardId) => {
@@ -937,6 +1210,16 @@ class Original extends React.Component {
         })
     }
 
+    toggleMicrophone = () => {
+        const { toggleMic } = this.state;
+        if(this.localStream){
+            this.localStream.getAudioTracks().forEach( (track) =>{
+                track.enabled = !toggleMic;
+            });
+        }
+        this.setState({ toggleMic: !toggleMic });
+    }
+
     renderRenigBook() {
         const { renigBook, renigId } = this.state
         return (
@@ -1057,7 +1340,7 @@ class Original extends React.Component {
     }
 
     render() {
-        const { game, renigBook, players } = this.state
+        const { game, renigBook, players, toggleMic } = this.state
         const curPlayerId = (game.turnIndex + game.leadIndex) % 4        
         return (
             <SafeAreaView style={{ flex: 1 }}>
@@ -1165,13 +1448,21 @@ class Original extends React.Component {
                                                     padding: 2,
                                                 }, player.style, curPlayerId === player.playerPosition?styles.curPlayer:{}]} onPress={() => {}} >
                                                     <>
-                                                        <Image
+                                                        <View
                                                             style={{
                                                                 width : "100%",
                                                                 height : "100%",
                                                                 borderRadius: 48
-                                                            }}
-                                                            source={getCharacterAvatar(player.config.character)} />
+                                                            }}>
+                                                            <Character
+                                                                gender={player.config.character.gender}
+                                                                hair={player.config.character.hair}
+                                                                eyerow={player.config.character.eyerow}
+                                                                eye={player.config.character.eye}
+                                                                nose={player.config.character.nose}
+                                                                lip={player.config.character.lip}
+                                                            />
+                                                        </View>
                                                         { i === game.dealerIndex ? <Image  style={{ position: 'absolute', width: 16, height: 16, zIndex: 400, right: 4, bottom: 4 }} source={images.ic_dealer} /> : null}
                                                         { player.userid !== this.props.auth.userid ? <Text style={styles.playerName} ellipsizeMode={"tail"} numberOfLines={1}>{player.config.character.firstName + " " + player.config.character.lastName}</Text> : null}
                                                     </>
@@ -1201,8 +1492,8 @@ class Original extends React.Component {
                                     title={'Blind'}  
                                 />                                         
                             }
-                            <TouchableOpacity style={styles.touchRecorder} >
-                                <Image style={styles.image} source={images.ic_recorder} />
+                            <TouchableOpacity style={styles.touchRecorder} onPress={this.toggleMicrophone}>
+                                <Image style={styles.image} source={toggleMic?images.ic_recorder:images.ic_recorder_disable} />
                             </TouchableOpacity>
                         </View>
 

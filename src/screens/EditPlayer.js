@@ -39,8 +39,6 @@ class EditPlayer extends React.Component {
         const { auth, setUser } = this.props;
         apiService.updateProfileForUser(auth.user, profile, (res) => {
             if (res.isSuccess) {
-                AsyncStorage.setItem('USER', JSON.stringify(res.response));
-                setUser(res.response);
                 callback();
             } else {
                 console.log("profile updating error: ", res.message);
@@ -55,8 +53,6 @@ class EditPlayer extends React.Component {
         const profileData = { skinColor, accessory, nailColor, spadezDeck, spadezTable };
         apiService.updateProfileForUser(auth.user, profileData, (res) => {
             if (res.isSuccess) {
-                AsyncStorage.setItem('USER', JSON.stringify(res.response));
-                setUser(res.response);
                 showToast('Profile is saved successfully!');
             } else {
                 showToast('Saving Profile Failed!');

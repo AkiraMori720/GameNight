@@ -33,3 +33,5 @@ export const LOGOUT = 'LOGOUT';
 export const USER = createRequestTypes('USER', ['SET']);
 
 export const PREFERENCE = createRequestTypes('PREFERENCE', ['SET', 'UPDATE']);
+
+export const NOTIFICATION = createRequestTypes('NOTIFICATION', ['OPEN']);

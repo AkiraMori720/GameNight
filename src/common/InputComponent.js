@@ -36,7 +36,7 @@ export default class InputComponent extends React.Component {
                 <Image style={[styles.img,{height:iconHeight},{width: iconWidth}]} source={this.props.imgLeft} />
                 <TextInput
                     secureTextEntry={secureTextEntry}
-                    style={[styles.textInput,{paddingLeft:inputPaddingLeft}, {color : '#ffffff'}]}
+                    style={[styles.textInput,{paddingLeft:inputPaddingLeft}, {color : '#000000'}]}
                     placeholder={this.props.placeholder}
                     placeholderTextColor={placeholderTextColor}
                     keyboardType={this.props.keyboardType}

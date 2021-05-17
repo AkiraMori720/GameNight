@@ -2,6 +2,10 @@
 import firestore from "@react-native-firebase/firestore";
 import * as CT from '../constants/cardKinds';
 import database from "@react-native-firebase/database";
+import FirebaseHelper from "./FirebaseHelper";
+import store from "../store/createStore";
+import {setUser} from "../actions/login";
+import AsyncStorage from "@react-native-community/async-storage";
 
 const asyncFilter = async (arr, predicate) => {
     const results = await Promise.all(arr.map(predicate));
@@ -389,60 +393,6 @@ class firebaseServices {
                 console.error(error)
             })
     }
-    /*
-    joinPrivateGame = (data, callback) => {
-        firestore()
-            .collection('rooms')
-            .doc(data.roomid)
-            .get()
-            .then(snapshot => {
-                let room = snapshot.data()
-                let game = room.game
-                if (game.players.length < 4) {
-                    let player = {
-                        username: data.username,
-                        userid: data.userid,
-                        playerPosition: 0,
-                        cards: [],
-                        currentRoundBid: -1,
-                        currentRoundTricksTaken: 0,
-                        bagsTaken: 0,
-                        gameScore: 0,
-                        isShownVoidInSuit: [false, false, false, false]
-                    }
-                    room.game.players.push(player)
-                    if (room.game.players.length === 4) {
-                        room.waiting = false;
-                        room.started = true;
-
-                        if (game.gameType === 'partner') {
-                            room.game.teams = this.setTeam(room.game.players.length)
-                        }
-                        this.initGameForRound(room.game)
-                    }
-                    firestore()
-                        .collection('rooms')
-                        .doc(data.roomid)
-                        .update({
-                            waiting: room.waiting,
-                            started: room.started,
-                            game: room.game
-                        })
-                        .then(response => {
-                            callback && callback({ isSuccess: true, response: response, message: null });
-                            console.log('User added!');
-                        })
-                        .catch(error => {
-                            callback && callback({ isSuccess: false, response: null, message: error });
-                            console.error(error)
-                        })
-                }
-            })
-            .catch(error => {
-                callback && callback({ isSuccess: false, response: null, message: error });
-                console.error(error)
-            })
-    }   */
     getOnlinePlayers = async(roomId, players) => {
         return await asyncFilter(players,
             (async p => {
@@ -479,6 +429,7 @@ class firebaseServices {
                     }
 
                     room.game.players = await this.getOnlinePlayers(data.roomid, room.game.players);
+                    room.game.players = room.game.players.filter(player => player.userid !== data.userid);
 
                     room.game.players.push(player)
                     if (room.game.players.length === 4) {
@@ -501,124 +452,6 @@ class firebaseServices {
                 console.error(error)
             })
     }
-    /*
-    joinGame = (data, callback) => {
-        firestore()
-            .collection('rooms')
-            .get()
-            .then(querySnapshot => {
-                console.log('Total rooms: ', querySnapshot.size);
-                debugger;
-                let fJoined = false;
-                querySnapshot.forEach(documentSnapshot => {
-                    let room = documentSnapshot.data()
-                    if (!room.started && !room.private) {
-                        if (room.game.gameType === data.gameType &&
-                            room.game.gameStyle === data.gameStyle &&
-                            room.game.gameLobby === data.gameLobby &&
-                            room.game.winningScore === data.winningScore) {
-                            if (room.game.players.length < 4) {
-                                let player = {
-                                    name: data.name,
-                                    playerPosition: 0,
-                                    cards: [],
-                                    currentRoundBid: -1,
-                                    currentRoundTricksTaken: 0,
-                                    bagsTaken: 0,
-                                    gameScore: 0,
-                                    isShownVoidInSuit: [false, false, false, false]
-                                }
-                                room.game.players.push(player)
-                                if (room.game.players.length === 4) {
-                                    room.waiting = false;
-                                    room.started = true;
-                                    if (game.gameType === 'partner') {
-                                        room.game.teams = this.setTeam(room.game.players.length)
-                                    }
-                                    this.initGameForRound(room.game)
-                                }
-                                firestore()
-                                    .collection('rooms')
-                                    .doc(`${documentSnapshot.id}`)
-                                    .update({
-                                        waiting: room.waiting,
-                                        started: room.started,
-                                        game: room.game
-                                    })
-                                    .then(response => {
-                                        callback && callback({ isSuccess: true, response: response, message: null });
-                                        console.log('User added!');
-                                    })
-                                    .catch(error => {
-                                        callback && callback({ isSuccess: false, response: null, message: error });
-                                        console.error(error)
-                                    })
-                                fJoined = true;
-                                Break;
-
-                            }
-                        }
-                    }
-                });
-                if (!fJoined) {
-                    let room = {
-                        name: 'room name',
-                        started: false,
-                        waiting: true,
-                        private: false,
-                        players_num: 1,
-                        game: {
-                            gameType: data.type,
-                            gameStyle: data.style,
-                            gameLobby: data.lobby,
-                            winningScore: data.winningScore,
-                            penaltyScore: this.setOverbookPenalty(data.winningScore),
-                            cardsPlayedThisRound: [],
-                            trickCards: [],
-                            roundBooks: [],
-                            roundNumber: 0,
-                            dealerIndex: 0,
-                            leadIndex: 0,
-                            turnIndex: 0,
-                            isSpadesBroken: false,
-                            currentMoveStage: 'None',
-                            roundScores: [],
-                            roundTeamScores: [],
-                            players: [],
-                            teams: [],
-                            bidding: 0,
-                            renig: 0,
-                            renigResult: null
-                        }
-                    }
-                    let player = {
-                        name: data.name,
-                        playerPosition: 0,
-                        cards: [],
-                        currentRoundBid: -1,
-                        currentRoundTricksTaken: 0,
-                        bagsTaken: 0,
-                        gameScore: 0,
-                        isShownVoidInSuit: [false, false, false, false]
-                    }
-                    room.game.players.push(player);
-                    firestore()
-                        .collection('rooms')
-                        .add(room)
-                        .then((response) => {
-                            debugger;
-                            callback && callback({ isSuccess: true, response: response, message: null });
-                            console.log('Room created!', response);
-                        })
-                        .catch(error => {
-                            debugger;
-                            callback && callback({ isSuccess: false, response: null, message: error });
-                            console.error(error)
-                        })
-                }
-            });
-    }
-    */
    joinGame = (data, callback = null) => {
         firestore()
         .collection('rooms')
@@ -636,6 +469,7 @@ class firebaseServices {
 
                         // Filter Online Users
                         room.game.players = await this.getOnlinePlayers(documentSnapshot.id, room.game.players);
+                        room.game.players = room.game.players.filter(player => player.userid !== data.userid);
 
                         console.log('Rooms Users: ', room.game.players.length);
 
@@ -813,65 +647,6 @@ class firebaseServices {
             });
         }
     }
-
-    // initGameForRound = (roomid, callback) => {
-    //     firestore()
-    //         .collection('rooms')
-    //         .doc(roomid)
-    //         .get()
-    //         .then(snapshot => {
-    //             let room = snapshot.data()
-    //             let game = room.game
-    //             game.roundNumber = game.roundNumber + 1;
-    //             game.trickCards = [];
-    //             game.roundBooks = [];
-    //             for (var i = 0; i < game.players.length; i++) {
-    //                 game.players[i].cards = [];
-    //                 game.players[i].currentRoundBid = -1;
-    //                 game.players[i].currentRoundTricksTaken = 0;
-    //                 game.players[i].isShownVoidInSuit = [false, false, false, false];
-    //             }
-    //             for (var i = 0; i < game.teams.length; i++) {
-    //                 game.teams[i].blind = 1;
-    //                 game.teams[i].currentRoundBid = -1;
-    //                 game.teams[i].currentRoundTricksTaken = 0;
-    //             }
-
-    //             // Deal cards for round
-    //             game.leadIndex = game.dealerIndex
-    //             game.turnIndex = 0;
-    //             game.bidding = 0;
-    //             game.renig = 0;
-    //             game.isSpadesBroken = false;
-    //             game.cardsPlayedThisRound = [];
-    //             game.currentMoveStage = 'None';
-    //             const gamecards = this.getGameCards(game.gameStyle);
-    //             let cards = this.shuffle(gamecards);
-    //             let deckTopIndex = cards.length - 1;
-    //             for (var i = 0; i < 13; i++) {
-    //                 for (var j = 0; j < 4; j++) {
-    //                     game.players[j].cards.push(cards[deckTopIndex]);
-    //                     deckTopIndex = deckTopIndex - 1;
-    //                 }
-    //             }
-
-    //             // Sort the players hand
-    //             for (var j = 0; j < 4; j++) {
-    //                 game.players[j].cards.sort((a, b) => {
-    //                     if (a.suit != b.suit) {
-    //                         return a.suitInt - b.suitInt;
-    //                     } else {
-    //                         return a.value - b.value;
-    //                     }
-    //                 });
-    //             }
-    //             this.updateGame(roomid, game, callback)
-    //         })
-    //         .catch(error => {
-    //             callback && callback({ isSuccess: false, response: null, message: error });
-    //             console.error(error)
-    //         })
-    // }
 
     setBid = (data, callback = null) => {
         firestore()
@@ -1189,7 +964,7 @@ class firebaseServices {
             })
     }
 
-    deleteRoom = (roomid, callback) => {
+    deleteRoom = (roomid, callback = null) => {
         firestore()
             .collection('rooms')
             .doc(roomid)
@@ -1201,6 +976,35 @@ class firebaseServices {
                 callback && callback({ isSuccess: false, response: null, message: error });
                 console.error(error)
             })
+    }
+
+    deleteWebRTCConnection  = (connectionId, callback = null) => {
+        firestore()
+            .collection('webrtcConnections')
+            .doc(connectionId)
+            .delete()
+            .then(() => {
+                console.log('webrtcConnections deleted!');
+            })
+            .catch(error => {
+                callback && callback({ isSuccess: false, response: null, message: error });
+                console.error(error)
+            })
+    }
+
+    subscribe = (userId) => {
+        this.userSubscribe = firestore().collection('userProfile').doc(userId).onSnapshot(snapshot => {
+            let user = snapshot.data();
+            AsyncStorage.setItem('USER', JSON.stringify(user));
+            store.dispatch(setUser(user));
+            console.log('change profile', user);
+        });
+    }
+
+    unSubscribe = () => {
+        if(this.userSubscribe){
+            this.userSubscribe();
+        }
     }
 }
 

@@ -5,14 +5,12 @@ import Header from '../common/Header';
 import images from '../../assets/images';
 import { connect } from 'react-redux';
 import apiService from "../firebase/FirebaseHelper";
-import AsyncStorage from "@react-native-community/async-storage";
-import {USER} from "../actions/types";
 import { setUser as setUserAction } from "../actions/login";
-import normalize from "react-native-normalize/src/index";
 import SimpleButton from "../common/SimpleButton";
-import {FEMALE_PROFILE_PROPS, GENDER_FEMALE, MALE_PROFILE_PROPS} from "../constants/constants";
+import {FEMALE_PROFILE_PROPS, GENDER_FEMALE, GENDER_MALE, MALE_PROFILE_PROPS} from "../constants/constants";
 import random from "../common/random";
 import {showToast} from "../common/info";
+import Character from "../Component/Character";
 
 
 class EditAvatar extends React.Component {
@@ -31,7 +29,6 @@ class EditAvatar extends React.Component {
             eye: profile?.eye??1,
             nose: profile?.nose??1,
             lip: profile?.lip??1,
-            profileProps: gender === GENDER_FEMALE?FEMALE_PROFILE_PROPS:MALE_PROFILE_PROPS,
             loading: false
         }
     }
@@ -86,8 +83,7 @@ class EditAvatar extends React.Component {
         apiService.updateProfileForUser(auth.user, { characterSelectedId, characters }, (res) => {
             if (res.isSuccess) {
                 let user = Object.assign({}, res.response);
-                AsyncStorage.setItem('USER', JSON.stringify(user));
-                setUser(user);
+
                 showToast('Profile is saved Successfully');
                 this.props.navigation.navigate('UserProfile');
             } else {
@@ -111,9 +107,11 @@ class EditAvatar extends React.Component {
     }
 
     render() {
-        const { gender, hair, eyerow, eye, nose, lip, profileProps, loading } = this.state
+        const { gender, hair, eyerow, eye, nose, lip, loading } = this.state
         // const { skinColor, accessory, nailColor, handTattoo, spadezDeck, spadezTable } = this.props.auth
-        // console.log(this.props.auth)
+        const character = { gender, hair, eyerow, eye, nose, lip};
+        console.log(character);
+        const profileProps = (gender === GENDER_FEMALE)?FEMALE_PROFILE_PROPS:MALE_PROFILE_PROPS;
 
         return (
             <SafeAreaView style={{ flex: 1 }}>
@@ -132,13 +130,20 @@ class EditAvatar extends React.Component {
                                 backgroundColor: '#250901',
                                 height: hp(30),
                                 width: wp(90),
-                                justifyContent: 'center',
                                 alignItems: 'center',
                                 borderWidth: 3,
                                 borderColor: '#E83528',
                                 borderRadius: 7,
+                                paddingVertical: hp(2)
                             }}>
-                                <Image style={{ height: '80%', width: '80%', resizeMode: 'contain', }} source={gender === GENDER_FEMALE?images.female_preview_1:images.male_preview_1} />
+                                <Character
+                                    gender={gender}
+                                    hair={hair}
+                                    eyerow={eyerow}
+                                    eye={eye}
+                                    nose={nose}
+                                    lip={lip}
+                                />
                             </View>
                         </View>
                         <View style={styles.contentContainer}>
@@ -147,19 +152,21 @@ class EditAvatar extends React.Component {
                             </View>
                             <View style={styles.typeView}>
                                 <View style={styles.typeInnerView}>
-                                    {profileProps.hairs && profileProps.hairs.map((item, i) => {
-                                        const btnStyle = this.getBtnStyle(i, profileProps.hairs.length)
-                                        const backgroundColor = item.id === hair ? 'red' : '#460000'
-                                        return (
-                                            <TouchableOpacity
-                                                key={i}
-                                                onPress={() => this.setState({hair: item.id})}
-                                                style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                            >
-                                                <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
-                                            </TouchableOpacity>
-                                        )
-                                    })}
+                                    {
+                                        profileProps.hairs.map((item, i) => {
+                                            const btnStyle = this.getBtnStyle(i, profileProps.hairs.length)
+                                            const backgroundColor = item.id === hair ? 'red' : '#460000'
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    onPress={() => this.setState({hair: item.id})}
+                                                    style={[btnStyle, { backgroundColor: backgroundColor }]}
+                                                >
+                                                    <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
+                                                </TouchableOpacity>
+                                            )
+                                        })
+                                    }
                                 </View>
                             </View>
                             <View style={styles.textView}>
@@ -167,19 +174,21 @@ class EditAvatar extends React.Component {
                             </View>
                             <View style={styles.typeView}>
                                 <View style={styles.typeInnerView}>
-                                    {profileProps.eyerows && profileProps.eyerows.map((item, i) => {
-                                        const btnStyle = this.getBtnStyle(i, profileProps.eyerows.length)
-                                        const backgroundColor = eyerow === item.id ? 'red' : '#460000'
-                                        return (
-                                            <TouchableOpacity
-                                                key={i}
-                                                onPress={() => this.setState({eyerow: item.id})}
-                                                style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                            >
-                                                <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
-                                            </TouchableOpacity>
-                                        )
-                                    })}
+                                    {
+                                        profileProps.eyerows.map((item, i) => {
+                                            const btnStyle = this.getBtnStyle(i, profileProps.eyerows.length)
+                                            const backgroundColor = eyerow === item.id ? 'red' : '#460000'
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    onPress={() => this.setState({eyerow: item.id})}
+                                                    style={[btnStyle, { backgroundColor: backgroundColor }]}
+                                                >
+                                                    <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
+                                                </TouchableOpacity>
+                                            )
+                                        })
+                                    }
                                 </View>
                             </View>
                             <View style={styles.textView}>

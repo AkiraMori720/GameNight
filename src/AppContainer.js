@@ -6,6 +6,7 @@ import 'react-native-gesture-handler';
 import {connect} from 'react-redux';
 import {createStackNavigator} from "@react-navigation/stack";
 import {NavigationContainer} from '@react-navigation/native';
+
 import {ROOT_INSIDE, ROOT_LOADING, ROOT_ONBOARD, ROOT_OUTSIDE} from './actions/app';
 
 import Splash from "./screens/Splash";
