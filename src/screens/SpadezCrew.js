@@ -262,7 +262,7 @@ class SpadezCrew extends React.Component {
                         onPress={() => this.props.navigation.goBack()}
                         bgColor={'#250901'} title={'GAMENIGHT SPADEZ'} headerBorderWidth={0} imgLeftColor={'#fff'} imgRightColor={'#EFC76C'} imgLeft={images.ic_back} imgRight={images.ic_dropdow} onPressRight={() => this.setState({showFilterDropdown: !showFilterDropdown})} />
                     <View style={styles.searchView}>
-                        <InputComponent placeholder={'Search'} placeholderTextColor={'#000000'} imgRight={images.ic_search} inputHeight={hp(6)} onChangeText={(txt) => this.onChangeText(txt)}/>
+                        <InputComponent placeholder={'Search'} placeholderTextColor={'#444444'} textColor={'#000000'} imgRight={images.ic_search} inputHeight={hp(6)} onChangeText={(txt) => this.onChangeText(txt)}/>
                     </View>
                     <View style={styles.flatView}>
                          <View style={styles.innerFlatView}>

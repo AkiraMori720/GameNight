@@ -19,6 +19,7 @@ export default class InputComponent extends React.Component {
 
     render() {
         let bgColor=this.props.bgColor || '#ffffff';
+        let textColor=this.props.textColor || '#ffffff';
         let placeholderTextColor = this.props.placeholderTextColor || '#aaaaaa';
         let inputHeight=this.props.inputHeight || hp(5);
         let inputWidth=this.props.inputWidth || wp(92);
@@ -36,7 +37,7 @@ export default class InputComponent extends React.Component {
                 <Image style={[styles.img,{height:iconHeight},{width: iconWidth}]} source={this.props.imgLeft} />
                 <TextInput
                     secureTextEntry={secureTextEntry}
-                    style={[styles.textInput,{paddingLeft:inputPaddingLeft}, {color : '#000000'}]}
+                    style={[styles.textInput,{paddingLeft:inputPaddingLeft}, {color : textColor}]}
                     placeholder={this.props.placeholder}
                     placeholderTextColor={placeholderTextColor}
                     keyboardType={this.props.keyboardType}
