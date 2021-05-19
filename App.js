@@ -6,6 +6,8 @@ import {appInit} from "./src/actions/app";
 import Toast from './src/Component/Toast';
 import messaging from "@react-native-firebase/messaging";
 import {notificationOpen} from "./src/actions/notification";
+import InAppNotification, {INAPP_NOTIFICATION_EMITTER} from "./src/Component/InAppNotification";
+import EventEmitter from './src/common/events';
 
 export default class App extends Component {
     constructor() {
@@ -14,6 +16,14 @@ export default class App extends Component {
     }
 
     init = async() => {
+        messaging().onMessage(remoteMessage => {
+            console.log(
+                'Notification caused app to open from foreground state:',
+                remoteMessage,
+            );
+            EventEmitter.emit(INAPP_NOTIFICATION_EMITTER, remoteMessage);
+        });
+
         messaging().onNotificationOpenedApp(remoteMessage => {
             console.log(
                 'Notification caused app to open from background state:',
@@ -40,6 +50,7 @@ export default class App extends Component {
         return (
             <Provider store={store}>
                 <AppContainer />
+                <InAppNotification />
                 <Toast/>
             </Provider>
         );

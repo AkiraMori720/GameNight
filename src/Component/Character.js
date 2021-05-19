@@ -59,7 +59,7 @@ const styles = {
     nose: {
         position: 'absolute',
         top: '6%',
-        width: '16%',
+        width: '12%',
         height: '100%',
         resizeMode: 'contain'
     },

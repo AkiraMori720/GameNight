@@ -11,7 +11,7 @@ const introductionVideo = require('../../assets/introduction.mp4');
 
 class Introduction extends React.Component {
 
-    start(){
+    start = () => {
         const { characters } = this.props.auth;
         this.setState({showVideo: false});
         if(characters && characters.length > 0){
@@ -26,7 +26,7 @@ class Introduction extends React.Component {
                 <SafeAreaView style={{flex: 1}}>
                     <View style={styles.mainContainer}>
                         <Header
-                            onPress={this.start}
+                            onPress={() => this.start()}
                             onPressRight={() => {
                                 this.setState({showVideo: false});
                                 this.props.navigation.navigate('Setting')

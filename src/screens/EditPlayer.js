@@ -5,13 +5,11 @@ import Header from '../common/Header';
 import images from '../../assets/images';
 import { connect } from 'react-redux';
 import apiService from "../firebase/FirebaseHelper";
-import AsyncStorage from "@react-native-community/async-storage";
-import {USER} from "../actions/types";
 import { setUser as setUserAction } from "../actions/login";
 import SimpleButton from "../common/SimpleButton";
 import {PLAYER_PROPS} from "../constants/constants";
 import {showToast} from "../common/info";
-
+import Hand from "../Component/Hand";
 
 class EditPlayer extends React.Component {
     constructor(props) {
@@ -98,7 +96,11 @@ class EditPlayer extends React.Component {
                                 borderColor: '#E83528',
                                 borderRadius: 7,
                             }}>
-                                <Image style={{ height: '80%', width: '80%', resizeMode: 'contain', }} source={images.hand_preview} />
+                                <Hand
+                                    accessory={accessory}
+                                    skinColor={skinColor}
+                                    nailColor={nailColor}
+                                />
                             </View>
                         </View>
                         <View style={styles.contentContainer}>

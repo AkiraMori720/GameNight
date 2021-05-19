@@ -9,8 +9,12 @@ import {loginSuccess} from "../actions/login";
 import Navigation from '../common/Navigation';
 import store from "../store/createStore";
 
-const handleOpen = function* handleOpen({ params }) {
+const handleOpen = function* handleOpen({ data }) {
     const authorized = yield select(state => state.login.authorized);
+    const params = {
+        fPrivate: (data.fPrivate === '1'),
+        roomid: data.roomid??null
+    }
     console.log('handleOpen', params);
     if(!authorized){
         const provider =  yield AsyncStorage.getItem('authProvider');

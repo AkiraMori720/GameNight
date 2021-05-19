@@ -1,8 +1,6 @@
-// import firebase from "react-native-firebase";
 import firestore from "@react-native-firebase/firestore";
 import * as CT from '../constants/cardKinds';
 import database from "@react-native-firebase/database";
-import FirebaseHelper from "./FirebaseHelper";
 import store from "../store/createStore";
 import {setUser} from "../actions/login";
 import AsyncStorage from "@react-native-community/async-storage";
@@ -414,6 +412,9 @@ class firebaseServices {
             .then(async (snapshot) => {
                 let room = snapshot.data()
                 let game = room.game
+                room.game.players = await this.getOnlinePlayers(data.roomid, room.game.players);
+                room.game.players = room.game.players.filter(player => player.userid !== data.userid);
+
                 if (game.players.length < 4) {
                     let player = {
                         username: data.username,
@@ -428,14 +429,11 @@ class firebaseServices {
                         config: data.config
                     }
 
-                    room.game.players = await this.getOnlinePlayers(data.roomid, room.game.players);
-                    room.game.players = room.game.players.filter(player => player.userid !== data.userid);
-
-                    room.game.players.push(player)
-                    if (room.game.players.length === 4) {
+                    room.game.players.push(player);
+                    room.players_num = room.game.players.length;
+                    if (room.players_num === 4) {
                         room.waiting = false;
                         room.started = true;
-                        
                         if(game.gameType === 'partner') {
                             room.game.teams = this.setTeam(room.game.players.length)
                         }
@@ -454,105 +452,106 @@ class firebaseServices {
     }
    joinGame = (data, callback = null) => {
         firestore()
-        .collection('rooms')
-        .get()
-        .then(async querySnapshot => {
-            console.log('Total rooms: ', querySnapshot.size);
-            let fJoined = false;
-            await Promise.all(querySnapshot.docs.map(async documentSnapshot => {
-                let room = documentSnapshot.data()
-                if (!room.started && !room.private) {
-                    if (room.game.gameType === data.gameType &&
-                        room.game.gameStyle === data.gameStyle &&
-                        room.game.gameLobby === data.gameLobby &&
-                        room.game.winningScore === data.winningScore) {
+            .collection('rooms')
+            .get()
+            .then(async querySnapshot => {
+                console.log('Total rooms: ', querySnapshot.size);
+                let fJoined = false;
+                await Promise.all(querySnapshot.docs.map(async documentSnapshot => {
+                    let room = documentSnapshot.data()
+                    if (!room.started && !room.private && room.game) {
+                        if (room.game.gameType === data.gameType &&
+                            room.game.gameStyle === data.gameStyle &&
+                            room.game.gameLobby === data.gameLobby &&
+                            room.game.winningScore === data.winningScore) {
 
-                        // Filter Online Users
-                        room.game.players = await this.getOnlinePlayers(documentSnapshot.id, room.game.players);
-                        room.game.players = room.game.players.filter(player => player.userid !== data.userid);
+                            // Filter Online Users
+                            room.game.players = await this.getOnlinePlayers(documentSnapshot.id, room.game.players);
+                            room.game.players = room.game.players.filter(player => player.userid !== data.userid);
 
-                        console.log('Rooms Users: ', room.game.players.length);
+                            console.log('Rooms Users: ', room.game.players.length);
 
-                        if (room.game.players.length < 4) {
-                            let player = {
-                                username: data.username,
-                                userid: data.userid,
-                                playerPosition: room.game.players.length,
-                                cards: [],
-                                currentRoundBid: -1,
-                                currentRoundTricksTaken: 0,
-                                bagsTaken: 0,
-                                gameScore: 0,
-                                isShownVoidInSuit: [false, false, false, false],
-                                config: data.config
-                            }
-
-                            room.game.players.push(player)
-                            room.players_num = room.game.players.length;
-                            if (room.players_num === 4) {
-                                room.waiting = false;
-                                room.started = true;
-                                if(room.game.gameType === 'partner') {
-                                    room.game.teams = this.setTeam(room.game.players.length)
+                            if (room.game.players.length < 4) {
+                                let player = {
+                                    username: data.username,
+                                    userid: data.userid,
+                                    playerPosition: room.game.players.length,
+                                    cards: [],
+                                    currentRoundBid: -1,
+                                    currentRoundTricksTaken: 0,
+                                    bagsTaken: 0,
+                                    gameScore: 0,
+                                    isShownVoidInSuit: [false, false, false, false],
+                                    config: data.config
                                 }
-                                this.initGameForRound(room.game)
-                            }
 
-                            console.log('Game Room', room);
-                            // TODO change
-                            this.updateRoom(documentSnapshot.id, room, callback)
-                            fJoined = true;
+                                room.game.players.push(player)
+                                room.players_num = room.game.players.length;
+                                if (room.players_num === 4) {
+                                    room.waiting = false;
+                                    room.started = true;
+                                    if(room.game.gameType === 'partner') {
+                                        room.game.teams = this.setTeam(room.game.players.length)
+                                    }
+                                    this.initGameForRound(room.game)
+                                }
+
+                                console.log('Game Room', room);
+                                // TODO change
+                                this.updateRoom(documentSnapshot.id, room, callback)
+                                fJoined = true;
+                            }
                         }
                     }
-                }
-            }));
-            if (!fJoined) {
-                let room = {
-                    name: 'room name',
-                    started: false,
-                    waiting: true,
-                    private: false,
-                    players_num: 1,
-                    game: {
-                        gameType: data.gameType,
-                        gameStyle: data.gameStyle,
-                        gameLobby: data.gameLobby,
-                        winningScore: data.winningScore,
-                        penaltyScore: this.setOverbookPenalty(data.winningScore),
-                        cardsPlayedThisRound: [],
-                        trickCards: [],
-                        roundBooks: [],
-                        roundNumber: 0,
-                        dealerIndex: 0,
-                        leadIndex: 0,
-                        turnIndex: 0,
-                        isSpadesBroken: false,
-                        currentMoveStage: 'None',
-                        roundScores: [],
-                        roundTeamScores: [],
-                        players: [],
-                        teams: [],
-                        bidding: 0,
-                        renig: 0
+                }));
+                if (!fJoined) {
+                    let room = {
+                        name: 'room name',
+                        started: false,
+                        waiting: true,
+                        private: false,
+                        players_num: 1,
+                        game: {
+                            gameType: data.gameType,
+                            gameStyle: data.gameStyle,
+                            gameLobby: data.gameLobby,
+                            winningScore: data.winningScore,
+                            penaltyScore: this.setOverbookPenalty(data.winningScore),
+                            cardsPlayedThisRound: [],
+                            trickCards: [],
+                            roundBooks: [],
+                            roundNumber: 0,
+                            dealerIndex: 0,
+                            leadIndex: 0,
+                            turnIndex: 0,
+                            isSpadesBroken: false,
+                            currentMoveStage: 'None',
+                            roundScores: [],
+                            roundTeamScores: [],
+                            players: [],
+                            teams: [],
+                            bidding: 0,
+                            renig: 0
+                        }
                     }
+                    let player = {
+                        userid: data.userid,
+                        username: data.username,
+                        playerPosition: 0,
+                        cards: [],
+                        currentRoundBid: -1,
+                        currentRoundTricksTaken: 0,
+                        bagsTaken: 0,
+                        gameScore: 0,
+                        isShownVoidInSuit: [false, false, false, false],
+                        config: data.config
+                    }
+                    room.game.players.push(player);
+                    // TODO change
+                    this.addRoom(room, callback)
                 }
-                let player = {
-                    userid: data.userid,
-                    username: data.username,
-                    playerPosition: 0,
-                    cards: [],
-                    currentRoundBid: -1,
-                    currentRoundTricksTaken: 0,
-                    bagsTaken: 0,
-                    gameScore: 0,
-                    isShownVoidInSuit: [false, false, false, false],
-                    config: data.config
-                }
-                room.game.players.push(player);
-                // TODO change
-                this.addRoom(room, callback)
-            }
-        });
+            });
+
     }
 
     restartGame = (roomid, callback = null) => {

@@ -22,10 +22,10 @@ import {cardLoweredHeight, cardLoweredWidth, cards} from '../constants/cards'
 import gameServices from '../firebase/gameService';
 import firestore from '@react-native-firebase/firestore';
 import database from '@react-native-firebase/database';
-import {getCharacterAvatar} from "../common/character";
 import {PLAYER_PROPS} from "../constants/constants";
 import {RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, mediaDevices} from "react-native-webrtc";
 import Character from "../Component/Character";
+import RTCView from "react-native-webrtc/RTCView";
 
 export const peerConnectionConfig = {
     'iceServers': [
@@ -112,7 +112,7 @@ class Original extends React.Component {
             // this.socket.emit('joinGame', data)
             gameServices.joinGame(data, (res) => {
                 if (res.isSuccess) {
-                    this.setPresenceHook(res.response.roomid, auth.userid);
+                    this.setPresenceHook(res.response.roomid, nextProps.auth.userid);
                     this.setState({ roomid: res.response.roomid })
                     this.playGame(res.response.roomid)
                 }
@@ -124,10 +124,27 @@ class Original extends React.Component {
     }
 
     componentDidMount() {
+        this.init();
+    }
+
+    componentWillUnmount() {
+        if (this.state.roomid) {
+            if(this.unSubscriber){
+                this.unSubscriber();
+            }
+            this.closeWebrtcConnections();
+            if(this.state.roomid){
+                this.removePresenceHook(this.state.roomid, this.props.auth.userid);
+                gameServices.removePlayer(this.state.roomid, this.props.auth.userid);
+            }
+        }
+    }
+
+    init = () => {
         const preference = this.props.preference
         const auth = this.props.auth
         const { roomid, fPrivate } = this.state
-
+        console.log('roomid, fPrivate', roomid, fPrivate);
         this.trickAnimate = []
 
         if (fPrivate === true && roomid !== undefined && roomid !== null) {
@@ -193,20 +210,6 @@ class Original extends React.Component {
         }
         else {
             this.playGame(roomid)
-        }
-
-    }
-
-    componentWillUnmount() {
-        if (this.state.roomid) {
-            if(this.unSubscriber){
-                this.unSubscriber();
-            }
-            this.closeWebrtcConnections();
-            if(this.state.roomid){
-                this.removePresenceHook(this.state.roomid, this.props.auth.userid);
-                gameServices.removePlayer(this.state.roomid, this.props.auth.userid);
-            }
         }
     }
 
@@ -286,13 +289,13 @@ class Original extends React.Component {
 
     requestJoin = async (connectionId) => {
         let newConnections = this.state.webRTCConnections;
-        newConnections[connectionId] = new RTCPeerConnection(peerConnectionConfig);
+        const peerConnection = new RTCPeerConnection(peerConnectionConfig);
 
         const connectionRef = firestore().collection('webrtcConnections').doc(connectionId);
         const callerCandidatesCollection = connectionRef.collection('callerCandidates');
 
         //Wait for their video stream
-        newConnections[connectionId].onicecandidate = function (event) {
+        peerConnection.onicecandidate = function (event) {
             if (event.candidate != null) {
                 console.log('onicecandidate');
                 // webRTCSdk.signal(connectionId, JSON.stringify({'ice': event.candidate}));
@@ -300,36 +303,41 @@ class Original extends React.Component {
             }
         }
 
-        newConnections[connectionId].onaddstream = (event) => {
+        peerConnection.onaddstream = (event) => {
             this.gotRemoteStream(event, connectionId)
         }
 
         //Add the local video stream
-        newConnections[connectionId].addStream(this.localStream);
+        peerConnection.addStream(this.localStream);
 
-        newConnections[connectionId].createOffer().then((offer) => {
-            newConnections[connectionId].setLocalDescription(offer).then(() => {
+        peerConnection.createOffer().then((offer) => {
+            peerConnection.setLocalDescription(offer).then(() => {
                 // console.log(connections);
                 // webRTCSdk.signal(id, JSON.stringify({'offer': connections[id].localDescription}));
                 connectionRef.set({ offer }).then(() => {
-
+                    if(this.connectionUnSubscribe[connectionId]){
+                        this.connectionUnSubscribe[connectionId]();
+                    }
                     // wait answer
                     this.connectionUnSubscribe[connectionId] = connectionRef.onSnapshot(async snapshot => {
                         const data = snapshot.data();
-                        if (!newConnections[connectionId].currentRemoteDescription && data.answer) {
+                        if (!peerConnection.currentRemoteDescription && data.answer) {
                             console.log('answer hook');
                             await connectionRef.update({ answer: null });
                             const rtcSessionDescription = new RTCSessionDescription(data.answer);
-                            await newConnections[connectionId].setRemoteDescription(rtcSessionDescription);
+                            await peerConnection.setRemoteDescription(rtcSessionDescription);
                         }
                     });
 
+                    if(this.connectionCandidateUnSubscribe[connectionId]){
+                        this.connectionCandidateUnSubscribe[connectionId]();
+                    }
                     this.connectionCandidateUnSubscribe[connectionId] = connectionRef.collection('calleeCandidates').onSnapshot(snapshot => {
                         snapshot.docChanges().forEach(async change => {
                             if (change.type === 'added') {
                                 let data = change.doc.data();
                                 console.log('add candidates hook');
-                                await newConnections[connectionId].addIceCandidate(new RTCIceCandidate(data));
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(data));
                             }
                         });
                     });
@@ -337,6 +345,7 @@ class Original extends React.Component {
             }).catch(e => console.log(e));
         });
 
+        newConnections[connectionId] = peerConnection;
         this.setState({ webRTCConnections: newConnections });
         console.log('add connection', connectionId);
     }
@@ -361,12 +370,12 @@ class Original extends React.Component {
         console.log('accepted connection hook', offer);
         let newConnections = this.state.webRTCConnections;
 
-        newConnections[connectionId] = new RTCPeerConnection(peerConnectionConfig);
+        const peerConnection = new RTCPeerConnection(peerConnectionConfig);
 
         const callerCandidatesCollection = connectionRef.collection('callerCandidates');
 
         //Wait for their video stream
-        newConnections[connectionId].onicecandidate = function (event) {
+        peerConnection.onicecandidate = function (event) {
             if (event.candidate != null) {
                 console.log('onicecandidate');
                 // webRTCSdk.signal(connectionId, JSON.stringify({'ice': event.candidate}));
@@ -374,19 +383,19 @@ class Original extends React.Component {
             }
         }
 
-        newConnections[connectionId].onaddstream = (event) => {
+        peerConnection.onaddstream = (event) => {
             this.gotRemoteStream(event, connectionId)
         }
 
         //Add the local video stream
-        newConnections[connectionId].addStream(this.localStream);
+        peerConnection.addStream(this.localStream);
 
         console.log('add connection in receive hook', connectionId);
 
-        await newConnections[connectionId].setRemoteDescription(new RTCSessionDescription(offer));
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
-        const answer = await newConnections[connectionId].createAnswer();
-        await newConnections[connectionId].setLocalDescription(answer);
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
 
         const roomWithAnswer = {answer, offer: null};
         await connectionRef.update(roomWithAnswer);
@@ -398,10 +407,12 @@ class Original extends React.Component {
                 if (change.type === 'added') {
                     console.log('onicecandidate');
                     let data = change.doc.data();
-                    await newConnections[connectionId].addIceCandidate(new RTCIceCandidate(data));
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data));
                 }
             });
         });
+
+        newConnections[connectionId] = peerConnection
         this.setState({webRTCConnections: newConnections});
     }
 
@@ -684,6 +695,9 @@ class Original extends React.Component {
                 if(room){
                     let game = room.game;
                     const myPos = game.players.findIndex((player) => player.userid === this.props.auth.userid);
+                    if(myPos === -1){
+                        return setTimeout(() => this.init(), 500);
+                    }
                     let players = [];
                     for (let index = 0; index < game.players.length; index++) {
                         let player = game.players[index];
@@ -1339,6 +1353,22 @@ class Original extends React.Component {
         )
     }
 
+    renderAudio = (player) => {
+        const { userid } = this.props.auth;
+        const { remoteStreams } = this.state;
+        const connectionId = this.getPeerConnectionId(userid, player.userid);
+        if(player.userid !== userid && remoteStreams[connectionId]) {
+            console.log('player - remoteStream', player.userid, connectionId);
+            return (<RTCView
+                key={connectionId}
+                zOrder={0}
+                streamURL={remoteStreams[connectionId].toURL()}
+                style={styles.audio}
+            />);
+        }
+        return null;
+    }
+
     render() {
         const { game, renigBook, players, toggleMic } = this.state
         const curPlayerId = (game.turnIndex + game.leadIndex) % 4        
@@ -1465,6 +1495,7 @@ class Original extends React.Component {
                                                         </View>
                                                         { i === game.dealerIndex ? <Image  style={{ position: 'absolute', width: 16, height: 16, zIndex: 400, right: 4, bottom: 4 }} source={images.ic_dealer} /> : null}
                                                         { player.userid !== this.props.auth.userid ? <Text style={styles.playerName} ellipsizeMode={"tail"} numberOfLines={1}>{player.config.character.firstName + " " + player.config.character.lastName}</Text> : null}
+                                                        { this.renderAudio(player) }
                                                     </>
                                                 </TouchableOpacity>}
                                         </View>
@@ -1622,6 +1653,10 @@ const styles = StyleSheet.create({
     curPlayer: {
         borderWidth: 3,
         borderColor: '#E83528',
+    },
+    audio: {
+        height: 140,
+        width: 110
     }
 });
 

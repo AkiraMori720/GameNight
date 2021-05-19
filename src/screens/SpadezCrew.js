@@ -49,12 +49,12 @@ class SpadezCrew extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if(equal(this.props.auth, prevProps.auth)){
-            this.init();
+        if(!equal(this.props.auth, prevProps.auth)){
+            setTimeout(() => this.init());
         }
     }
 
-    setInternalState(newState){
+    setInternalState = (newState) => {
         if(this.mounted){
             this.setState(newState);
         } else {
@@ -94,40 +94,35 @@ class SpadezCrew extends React.Component {
                 let players = [];
                 snapshot.docs.forEach(doc => {
                     let user = doc.data();
-                    if(!user.characterSelectedId || user.userid === this.props.auth.userid){
-                        return;
+                    if(user.characterSelectedId && user.userid !== this.props.auth.userid){
+                        const userCharacter = user.characters.find(item => item.id === user.characterSelectedId);
+
+                        let userFriends = [];
+                        try{
+                            userFriends =  user.friends?JSON.parse(user.friends):[];
+                        } catch {}
+
+                        const player = {
+                            id: user.userid,
+                            character: userCharacter,
+                            is_friend: friends.includes(user.userid)??false,
+                            friends: userFriends,
+                            fcmToken: user.fcmToken
+                        }
+                        players.push(player);
                     }
-
-                    const userCharacter = user.characters.find(item => item.id === user.characterSelectedId);
-
-                    let userFriends = [];
-                    try{
-                        userFriends =  user.friends?JSON.parse(user.friends):[];
-                    } catch {}
-
-                    const player = {
-                        id: user.userid,
-                        character: userCharacter,
-                        is_friend: friends.includes(user.userid)??false,
-                        friends: userFriends,
-                        fcmToken: user.fcmToken
-                    }
-                    players.push(player);
                 })
-
                 this.setInternalState({ players })
             }))
     }
 
     onChangeText = debounce((txt) => {
-        console.log(txt);
         const searchText = txt.trim();
         const { players } = this.state;
         let searchPlayers = players.filter(player => {
             const name = player.character.firstName + ' ' + player.character.lastName;
             return name.indexOf(searchText) >= 0;
         })
-        console.log('searchPlayers', searchPlayers);
         this.setState({
             searchWord: txt,
             searchPlayers
@@ -160,7 +155,7 @@ class SpadezCrew extends React.Component {
             gameServices.createPrivateGame(data, (res) => {
                 if (res.isSuccess) {
                     let fcmTokens = players.filter(player => selectFriends.includes(player.id) && player.fcmToken).map(player => player.fcmToken);
-                    FirebaseHelper.sendNotifications(res.response.roomid, fcmTokens, myName, { fPrivate: true, roomid: res.response.roomid }).then(() => {
+                    FirebaseHelper.sendNotifications(res.response.roomid, fcmTokens, myName, { fPrivate: 1, roomid: res.response.roomid }).then(() => {
                         showToast('Notifications are sent to friends successfully');
                     });
                     this.props.navigation.navigate('Original', { fPrivate: true, roomid: res.response.roomid });
@@ -173,6 +168,7 @@ class SpadezCrew extends React.Component {
     }
 
     onAction = (item) => {
+        console.log('onAction', item);
         const { selectFriends } = this.state;
         const { userid, friends } = this.props.auth;
         // invited in game
@@ -274,7 +270,7 @@ class SpadezCrew extends React.Component {
                          </View>
                         <View style={styles.viewBottom}>
                             <SimpleButton
-                                onPress={this._onPressStart}
+                                onPress={() => this._onPressStart()}
                                 btnHeight={hp(6)}
                                 btnWidth={wp(75)}
                                 textColor={'#000000'} title={'START'}
