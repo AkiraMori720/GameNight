@@ -5,6 +5,7 @@ import firestore from "@react-native-firebase/firestore";
 import storage from '@react-native-firebase/storage';
 import { LoginManager, AccessToken } from 'react-native-fbsdk';
 import { GoogleSignin } from '@react-native-community/google-signin';
+import {appleAuth} from '@invertase/react-native-apple-authentication';
 import moment from 'moment'
 import messaging from "@react-native-firebase/messaging";
 
@@ -90,6 +91,87 @@ class firebaseServices {
             });
     }
 
+    signinWithFacebook = async function (callback) {
+        let self = this;
+
+        const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+
+        if (result.isCancelled) {
+            throw 'User cancelled the login process';
+        }
+
+        // Once signed in, get the users AccesToken
+        const data = await AccessToken.getCurrentAccessToken();
+
+        if (!data) {
+            throw 'Something went wrong obtaining access token';
+        }
+
+        // Create a Firebase credential with the AccessToken
+        const facebookCredential = auth.FacebookAuthProvider.credential(data.accessToken);
+        // const provider = new firebase.auth.FacebookAuthProvider();
+
+        auth()
+            .signInWithCredential(facebookCredential)
+            // .signInWithPopup(provider)
+            .then(async (res) => {
+                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
+                const user = res.user;
+                let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
+                console.log('facebook user', user._user, snapshot.data(), token);
+                if (snapshot && snapshot.data()) {
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                } else {
+                    self.setProfileForUser(user, token, callback)
+                }
+                // callback({ isSuccess: true, token, user })
+            }).catch(function (error) {
+            callback && callback({ isSuccess: false, response: null, message: error.message });
+        });
+    }
+
+    signinWithApple = async function (callback) {
+        // Start the sign-in request
+        const appleAuthRequestResponse = await appleAuth.performRequest({
+            requestedOperation: appleAuth.Operation.LOGIN,
+            requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
+        });
+
+        // Ensure Apple returned a user identityToken
+        if (!appleAuthRequestResponse.identityToken) {
+            throw 'Apple Sign-In failed - no identify token returned';
+        }
+
+        // Once signed in, get the users AccesToken
+        const data = await AccessToken.getCurrentAccessToken();
+
+        if (!data) {
+            throw 'Something went wrong obtaining access token';
+        }
+
+        // Create a Firebase credential from the response
+        const {identityToken, nonce} = appleAuthRequestResponse;
+        const appleCredential = auth.AppleAuthProvider.credential(identityToken, nonce);
+
+        auth()
+            .signInWithCredential(appleCredential)
+            // .signInWithPopup(provider)
+            .then(async (res) => {
+                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
+                const user = res.user;
+                let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
+                console.log('apple user', user._user, snapshot.data(), token);
+                if (snapshot && snapshot.data()) {
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                } else {
+                    self.setProfileForUser(user, token, callback)
+                }
+                // callback({ isSuccess: true, token, user })
+            }).catch(function (error) {
+            callback && callback({ isSuccess: false, response: null, message: error.message });
+        });
+    }
+
     signout(callback) {
         auth()
             .signOut()
@@ -144,6 +226,9 @@ class firebaseServices {
                 break;
             case 'facebook':
                 credential = auth.FacebookAuthProvider.credential(token);
+                break;
+            case 'apple':
+                credential = auth.AppleAuthProvider.credential(token);
                 break;
         }
 

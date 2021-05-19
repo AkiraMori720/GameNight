@@ -9,6 +9,7 @@ const images = {
     bg: require('./images/bg.png'),
     onboard: require('./images/onboard.png'),
     ic_ace_of_spades_down: require('./images/ic_ace_of_spades_down.png'),
+    ic_apple: require('./images/ic_apple.png'),
     ic_add: require('./images/ic_add.png'),
     ic_back: require('./images/ic_back.png'),
     ic_checked: require('./images/ic_checked.png'),

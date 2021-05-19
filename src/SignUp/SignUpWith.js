@@ -51,6 +51,25 @@ class SignUpWith extends React.Component {
         })
     }
 
+    signInwithApple = () => {
+        const { loginSuccess, logout } = this.props;
+        apiService.signinWithApple(async (res) => {
+            if (res.isSuccess) {
+                if (res.response && res.response.disabled) {
+                    logout()
+                }
+                else {
+                    await AsyncStorage.setItem('authProvider', 'apple');
+                    await AsyncStorage.setItem('credential', JSON.stringify({ token: res.token }));
+                    loginSuccess(res.response);
+                }
+            } else {
+                console.log("apple signin error: ", res.message);
+                showToast('Login Failed!');
+            }
+        })
+    }
+
     render() {
         return(
             <SafeAreaView style={{flex:1}}>
@@ -94,6 +113,22 @@ class SignUpWith extends React.Component {
                                     imgLeft={images.ic_google}
                                     textColor={'#000000'}
                                     title={'GOOGLE'}
+                                />
+                            </View>
+                            <View style={{marginTop:'6%'}}>
+                                <IconButton
+                                    onPress={this.signInwithApple}
+                                    textPaddingLeft={wp(13)}
+                                    iconPaddingLeft={wp(6)}
+                                    btnWidth={wp(80)}
+                                    btnHeight={hp(6)}
+                                    btnRadius={wp(15)}
+                                    iconHeight={hp(4)}
+                                    iconWidth={wp(5)}
+                                    imgLeftColor={'#000000'}
+                                    imgLeft={images.ic_apple}
+                                    textColor={'#000000'}
+                                    title={'APPLE'}
                                 />
                             </View>
                             <View style={{marginTop:'6%'}}>
