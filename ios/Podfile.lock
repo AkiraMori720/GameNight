@@ -704,26 +704,26 @@ PODS:
     - React-Core
   - RNCPicker (1.8.1):
     - React-Core
-  - RNFBApp (11.5.0):
+  - RNFBApp (11.4.1):
     - Firebase/CoreOnly (= 7.11.0)
     - React-Core
-  - RNFBAuth (11.5.0):
+  - RNFBAuth (11.4.1):
     - Firebase/Auth (= 7.11.0)
     - React-Core
     - RNFBApp
-  - RNFBDatabase (11.5.0):
+  - RNFBDatabase (11.4.1):
     - Firebase/Database (= 7.11.0)
     - React-Core
     - RNFBApp
-  - RNFBFirestore (11.5.0):
+  - RNFBFirestore (11.4.1):
     - Firebase/Firestore (= 7.11.0)
     - React-Core
     - RNFBApp
-  - RNFBMessaging (11.5.0):
+  - RNFBMessaging (11.4.1):
     - Firebase/Messaging (= 7.11.0)
     - React-Core
     - RNFBApp
-  - RNFBStorage (11.5.0):
+  - RNFBStorage (11.4.1):
     - Firebase/Storage (= 7.11.0)
     - React-Core
     - RNFBApp
@@ -1040,12 +1040,12 @@ SPEC CHECKSUMS:
   react-native-config: f2c2ae45625a068c35681a16b9bfb1ca58b0adc7
   react-native-fbsdk: 8e92c7a334fd8d9c2b5d8b8fcd7ae2c314161099
   react-native-geolocation-service: 7c9436da6dfdecd9526c62eac62ea2bc3f0cc8ea
-  react-native-image-picker: 3637d63fef7e32a230141ab4660d3ceb773c824f
+  react-native-image-picker: 7a85cf7b0a53845f03ae52fb4592a2748ded069b
   react-native-maps: 6e499eee4eabf422ba8b6f94e993cc768bf35153
-  react-native-safe-area-context: e471852c5ed67eea4b10c5d9d43c1cebae3b231d
-  react-native-slider: b34d943dc60deb96d952ba6b6b249aa8091e86da
-  react-native-video: 1574074179ecaf6a9dd067116c8f31bf9fec15c8
-  react-native-viewpager: d054b58bf3d377e6b99558da6766463ff7e9b220
+  react-native-safe-area-context: f0906bf8bc9835ac9a9d3f97e8bde2a997d8da79
+  react-native-slider: e51492f1264d882a8815b71c5870f8978e52887d
+  react-native-video: 0bb76b6d6b77da3009611586c7dbf817b947f30e
+  react-native-viewpager: b99b53127d830885917ef84809c5065edd614a78
   react-native-webrtc: ccb0c21eb4fb04326648fbdb4a5d49977e2cf274
   React-RCTActionSheet: 89a0ca9f4a06c1f93c26067af074ccdce0f40336
   React-RCTAnimation: 1bde3ecc0c104c55df246eda516e0deb03c4e49b
@@ -1058,14 +1058,14 @@ SPEC CHECKSUMS:
   React-RCTVibration: ae4f914cfe8de7d4de95ae1ea6cc8f6315d73d9d
   ReactCommon: 73d79c7039f473b76db6ff7c6b159c478acbbb3b
   rn-fetch-blob: f525a73a78df9ed5d35e67ea65e79d53c15255bc
-  RNCAsyncStorage: cb9a623793918c6699586281f0b51cbc38f046f9
+  RNCAsyncStorage: b03032fdbdb725bea0bd9e5ec5a7272865ae7398
   RNCPicker: 914b557e20b3b8317b084aca9ff4b4edb95f61e4
-  RNFBApp: 9c90f9d576861947ba75fe0830567c570bcbcf6d
-  RNFBAuth: 99fdbce04ff3d39e57a7a3956d632ee69145685b
-  RNFBDatabase: 64aaecd9e48c6378864ef7d0fe65cc5f312987ed
-  RNFBFirestore: bedb9727c0df9a1f1ec23b5e23988075a4cbea78
-  RNFBMessaging: c873e6c37f69d22de22cab134413030a9c6330a9
-  RNFBStorage: 052a32c5af38b106e4d6b0a296df304d97be995e
+  RNFBApp: 996860ad6832996faba79ef3f6ec2d3ea5870dd9
+  RNFBAuth: 3726f7f9bc9e9efb80cd1f5b2e65c4b04dc53760
+  RNFBDatabase: 026067d3ce9d65c96146f7f32c1f044f27665f29
+  RNFBFirestore: 7fa546e352aad031a78b934a67435e55b32cba49
+  RNFBMessaging: 8d84ceadc705ca6b6047c37376d2e2aaabcb8e3d
+  RNFBStorage: 519ea44ccd27418d4bffbc9cd088a72697b5cb98
   RNGestureHandler: a479ebd5ed4221a810967000735517df0d2db211
   RNGoogleSignin: a00f87261ea13df9a5cea8deafa6927d6f2c3562
   RNReanimated: 70f662b5232dd5d19ccff581e919a54ea73df51c
