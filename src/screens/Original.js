@@ -790,7 +790,7 @@ class Original extends React.Component {
         const index = (position + 4 - myPosition) % 4
         switch (index) {
             case POS_SOUTH: //'South'
-                return { left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5 - 170, top: Dimensions.get('screen').height - 370 }
+                return { left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5 - 170, top: hp(54) }
             case POS_WEST: //'West',
                 return { left: 0 - CHARACTER_WIDTH * 0.5, top: 190 - CHARACTER_HEIGHT * 0.5 }
             case POS_NORTH: //'North'
@@ -907,8 +907,8 @@ class Original extends React.Component {
                 {
                     let firstLeft = wp(80) * 0.5 - 110//70;
                     let lastLeft = wp(80) * 0.5 + 110//Dimensions.get('screen').width - 100;
-                    let firstTop = Dimensions.get('screen').height - 370;
-                    let lastTop = Dimensions.get('screen').height - 370;
+                    let firstTop = hp(54);
+                    let lastTop = hp(54);
                     let handWidth = lastLeft - firstLeft;
                     let cardSpacing = handWidth / (cardCount - 1);
                     let curLeft = firstLeft;
@@ -916,8 +916,8 @@ class Original extends React.Component {
                     if (cardSpacing > maxSpacing) {
                         cardSpacing = maxSpacing;
                         curLeft = firstLeft + (handWidth - cardSpacing * (cardCount - 1)) * 0.5;
-                        firstTop = Dimensions.get('screen').height - 340;
-                        lastTop = Dimensions.get('screen').height - 340;
+                        firstTop = hp(54);
+                        lastTop = hp(54);
                     }
                     curLeft = curLeft + index * cardSpacing;
                     let percent = (curLeft - firstLeft) / handWidth;
