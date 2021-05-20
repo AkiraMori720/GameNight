@@ -4,6 +4,7 @@ import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-nativ
 import Header from '../common/Header';
 import images from '../../assets/images';
 import { connect } from 'react-redux';
+import equal from 'deep-equal';
 import {
     setPreferences as setPreferencesAction,
 } from '../actions/preference';
@@ -29,40 +30,36 @@ class GamePreferences extends React.Component {
         })
     }
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if(!equal(this.props.preference, prevProps.preference)){
+            const { gameType, soloPoints, partnerPoints } = this.props.preference
+            this.setState({
+                gameType,
+                soloPoints,
+                partnerPoints
+            })
+        }
+    }
+
     _onPressType(gameType) {
         const preferences = { gameType }
         const { userid } = this.props.auth
         
-        this.props.setPreferences({userId: userid, preferences})
-            .then(() => {
-                this.setState({
-                    gameType
-                })
-            })
+        this.props.setPreferences({userId: userid, preferences});
     }
 
     _onPressSolo(soloPoints) {
         const preferences = { soloPoints }
         const { userid } = this.props.auth
         
-        this.props.setPreferences({userId: userid, preferences})
-            .then(() => {
-                this.setState({
-                    soloPoints
-                })
-            })
+        this.props.setPreferences({userId: userid, preferences});
     }
 
     _onPressPartner(partnerPoints) {
         const preferences = { partnerPoints }
         const { userid } = this.props.auth
         
-        this.props.setPreferences({userId: userid, preferences})
-            .then(() => {
-                this.setState({
-                    partnerPoints
-                })
-            })
+        this.props.setPreferences({userId: userid, preferences});
     }
 
     calculateBgColors () {

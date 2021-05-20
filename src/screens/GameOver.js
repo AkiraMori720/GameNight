@@ -1,7 +1,6 @@
 import React from 'react';
-import {View,Text,StyleSheet,TextInput,TouchableOpacity,ImageBackground,SafeAreaView} from 'react-native';
+import {View,Text,StyleSheet, ImageBackground,SafeAreaView} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
-import {Collapse,CollapseHeader, CollapseBody, AccordionList} from 'accordion-collapse-react-native';
 import Header from '../common/Header';
 import images from '../../assets/images';
 import SimpleButton from '../common/SimpleButton';

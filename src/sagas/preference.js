@@ -2,7 +2,7 @@ import {put, takeLatest} from 'redux-saga/effects';
 
 import {PREFERENCE} from '../actions/types';
 import apiService from "../firebase/FirebaseHelper";
-import {updatePreferenceStore} from "../actions/preference";
+import {setPreferences, updatePreferenceStore} from "../actions/preference";
 
 const updatePreference = function* updatePreference({data}) {
 	const { userId, preferences } = data;
