@@ -288,6 +288,8 @@ class firebaseServices {
             accessory: 'bracelet',
             spadezDeck: 'red',
             spadezTable: 1,
+            score: 0,
+            maxScore: 0,
             createAt: moment().valueOf()
         };
 

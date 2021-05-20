@@ -110,8 +110,7 @@ class GameType extends React.Component {
     }
 
     onGotoBoard = () => {
-        const { appStart } = this.props;
-        appStart({root: ROOT_ONBOARD});
+        this.props.navigation.navigate('LeaderBoard');
     }
 
     render() {

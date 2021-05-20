@@ -14,6 +14,7 @@ import Terms from "../SignUp/Terms";
 import EditPlayer from "./EditPlayer";
 import EditAvatar from "./EditAvatar";
 import Original from "./Original";
+import LeaderBoard from "./LeaderBoard";
 
 const InsideStackNav = createStackNavigator();
 
@@ -76,6 +77,9 @@ const InsideStack = () => {
                 name='Terms'
                 component={Terms}
             />
+            <InsideStackNav.Screen
+                name='LeaderBoard'
+                component={LeaderBoard}/>
         </InsideStackNav.Navigator>
     );
 }

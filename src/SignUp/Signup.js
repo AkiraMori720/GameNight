@@ -78,7 +78,7 @@ class Signup extends React.Component {
             apiService.signUpWithEmailAndPassword(email, password, async (res) => {
                 if (res.isSuccess) {
                     await AsyncStorage.setItem('authProvider', 'email');
-                    await AsyncStorage.setItem('credential', JSON.stringify({ token: res.token }));
+                    await AsyncStorage.setItem('credential', JSON.stringify({ email, password }));
                     loginSuccess(res.response);
                 } else {
                     showToast('Login Failed!');

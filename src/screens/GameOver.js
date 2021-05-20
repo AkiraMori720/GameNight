@@ -5,6 +5,7 @@ import {Collapse,CollapseHeader, CollapseBody, AccordionList} from 'accordion-co
 import Header from '../common/Header';
 import images from '../../assets/images';
 import SimpleButton from '../common/SimpleButton';
+import apiService from "../firebase/FirebaseHelper";
 
 
 export default class GameOver extends React.Component {
@@ -12,8 +13,26 @@ export default class GameOver extends React.Component {
     constructor(props) {
         super(props);
         this.points = props.route.params?.points??0;
+        this.state = {
+            showTopScore: false
+        }
     }
+
+    componentDidMount() {
+        let { userid, score, maxScore } = this.props.auth;
+        score += this.points;
+        if(maxScore < this.points){
+            maxScore = this.points;
+            this.setState({ showTopScore: true });
+        }
+
+        apiService.updateProfileForUser({uid: userid}, { score, maxScore }, (res) => {
+
+        });
+    }
+
     render() {
+        const { showTopScore } = this.state;
         return(
             <SafeAreaView style={{flex:1}}>
                 <ImageBackground style={styles.mainContainer} source={images.bg}>
@@ -26,10 +45,10 @@ export default class GameOver extends React.Component {
                             <Text style={styles.text}>POINTS</Text>
                             <Text style={styles.text}>{this.points} Points</Text>
                         </View>
-                        <View style={{flexDirection: 'row',justifyContent:'space-between',width:'70%',marginTop:'7%'}}>
+                        { showTopScore ? <View style={{flexDirection: 'row',justifyContent:'space-between',width:'70%',marginTop:'7%'}}>
                             <Text style={styles.text}>AWARDS</Text>
                             <Text style={styles.text}>New High Score!</Text>
-                        </View>
+                        </View> : null }
                     </View>
 
                     <View style={styles.btnView}>
