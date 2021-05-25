@@ -1,4 +1,5 @@
 import React from 'react';
+import {connect} from 'react-redux'
 import {View,Text,StyleSheet, ImageBackground,SafeAreaView} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Header from '../common/Header';
@@ -7,7 +8,7 @@ import SimpleButton from '../common/SimpleButton';
 import apiService from "../firebase/FirebaseHelper";
 
 
-export default class GameOver extends React.Component {
+class GameOver extends React.Component {
 
     constructor(props) {
         super(props);
@@ -108,9 +109,10 @@ const styles= StyleSheet.create({
         textAlign: 'center',
         fontFamily:'Montserrat-Regular'
     }
-
-
-
 });
 
+const mapStateToProps = (state) => ({
+    auth: state.login.profile
+})
 
+export default connect(mapStateToProps, null)(GameOver);

@@ -60,6 +60,7 @@ class UserProfile extends React.Component {
 
     setCharacter = () => {
         const { characterSelectedId, characters } = this.props.auth;
+        if(!characterSelectedId || !characters){ return; }
         let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
         if(this.mounted){
             this.setState({ characters, character, characterSelectedId });

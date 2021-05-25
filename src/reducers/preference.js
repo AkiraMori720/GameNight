@@ -8,7 +8,7 @@ const initialState = {
     gameStyle: 0,
     gameLobby: null,
     soloPoints: 70,
-    partnerPoints: 150,
+    partnerPoints: 100,
     privateMatch: false
 }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import {View, StyleSheet, SafeAreaView, FlatList, Modal, ImageBackground, Text} from 'react-native';
+import {View, StyleSheet, SafeAreaView, FlatList} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import Header from '../common/Header';
 import images from '../../assets/images';
@@ -29,11 +29,10 @@ class SpadezCrew extends React.Component {
             showAlert: false,
             players: [],
             searchPlayers: [],
-            selectFriends: [],
+            selectPartner: null,
             showFilterDropdown: false,
             showOnlyFriends: true,
-            loading: false,
-            showSelectPartner: false
+            loading: false
         }
 
         this.init();
@@ -64,19 +63,15 @@ class SpadezCrew extends React.Component {
     }
 
     onAddPlayer = (user) => {
-        const { selectFriends } = this.state;
-        if(selectFriends.includes(user.id)){
-            this.setState({ selectFriends: selectFriends.filter(item => item !== user.id) });
-        } else {
-            if(selectFriends.length >= 3){
-                return showToast('You can not select over three players!');
-            }
-            if(!user.is_friend){
-                return showToast('This user is not your friend!');
-            }
+        let friends = [];
+        try{
+            friends =  this.props.auth.friends?JSON.parse(this.props.auth.friends):[];
+        } catch {}
 
-            selectFriends.push(user.id);
-            this.setState({ selectFriends });
+        if(friends.includes(user.id)){
+            this.setState({ selectPartner: user.id });
+        } else if(!friends.includes(user.id)){
+            return showToast('This user is not your friend!');
         }
     }
 
@@ -131,29 +126,13 @@ class SpadezCrew extends React.Component {
     }, 200);
 
     _onPressStart = () => {
-        const { selectFriends } = this.state;
-        if(selectFriends.length !== 3){
-            return showToast("Please select three players for playing game by clicking user`s avatar!");
+        const { selectPartner, players } = this.state;
+        if(!selectPartner){
+            return showToast("Please select three players for playing game!");
         }
 
-        const preference = this.props.preference;
-        console.log('gameType', preference.gameType);
-        if(preference.gameType === 'partner'){
-            this.setState({ showSelectPartner: true });
-        } else {
-            this._startGame();
-        }
-    }
-
-    _startGame = () => {
-        const { selectFriends, players, selectPartner, showSelectPartner } = this.state;
-        if(showSelectPartner && !selectPartner){
-            return showToast('Please select your partner!');
-        }
-        this.setState({ showSelectPartner: false });
-        const preference = this.props.preference;
+        const preference = this.props.preference
         const auth = this.props.auth;
-
         let myCharacter = auth.characters.find(i => i.id === auth.characterSelectedId);
         let myName = myCharacter.firstName + ' ' + myCharacter.lastName;
 
@@ -163,19 +142,19 @@ class SpadezCrew extends React.Component {
                 gameType: preference.gameType,
                 gameStyle: preference.gameStyle === 'random'?'partner':preference.gameStyle,
                 gameLobby: preference.gameLobby,
-                winningScore: preference.gameStyle === 'solo' ? preference.soloPoints : preference.partnerPoints,
+                winningScore: preference.partnerPoints,
                 partners: selectPartner?[auth.userid, selectPartner]:null,
-                private: true
+                private: false
             }
 
             console.log('data: ', data);
             gameServices.createGame(data, (res) => {
                 if (res.isSuccess) {
-                    let fcmTokens = players.filter(player => selectFriends.includes(player.id) && player.fcmToken).map(player => player.fcmToken);
-                    FirebaseHelper.sendNotifications(res.response.roomid, fcmTokens, myName, { fPrivate: 1, roomid: res.response.roomid }).then(() => {
-                        showToast('Notifications are sent to friends successfully');
+                    let player = players.find(player => player.id === selectPartner && player.fcmToken);
+                    FirebaseHelper.sendNotifications(res.response.roomid, [ player.fcmToken ], myName, { fPrivate: 0, roomid: res.response.roomid }).then(() => {
+                        showToast('Notifications are sent to your partner successfully');
                     });
-                    this.props.navigation.navigate('Original', { fPrivate: true, roomid: res.response.roomid });
+                    this.props.navigation.navigate('Original', { fPrivate: false, roomid: res.response.roomid });
                 }
                 else {
                     console.log(res.message);
@@ -186,10 +165,10 @@ class SpadezCrew extends React.Component {
 
     onAction = (item) => {
         console.log('onAction', item);
-        const { selectFriends } = this.state;
+        const { selectPartner } = this.state;
         const { userid, friends } = this.props.auth;
         // invited in game
-        if(selectFriends.includes(item.id)){
+        if(selectPartner === item.id){
             return;
         }
 
@@ -239,8 +218,8 @@ class SpadezCrew extends React.Component {
     }
 
     _player = item => {
-        const { selectFriends } = this.state;
-        let imageRight = selectFriends.includes(item.id)?images.ic_profile_game_badge:(item.is_friend?images.ic_delete:images.ic_add);
+        const { selectPartner } = this.state;
+        let imageRight = selectPartner === item.id?images.ic_profile_game_badge:(item.is_friend?images.ic_delete:images.ic_add);
 
         return (
             <PlayerComponent
@@ -262,69 +241,9 @@ class SpadezCrew extends React.Component {
         );
     };
 
-    _gamePlayer = item => {
-        const { selectPartner } = this.state;
-        let imageRight = selectPartner === item.id?images.ic_checked:null;
-
-        return (
-            <PlayerComponent
-                imgLeft={
-                    <Character
-                        gender={item.character.gender}
-                        hair={item.character.hair}
-                        eyerow={item.character.eyerow}
-                        eye={item.character.eye}
-                        nose={item.character.nose}
-                        lip={item.character.lip}
-                    />
-                }
-                title={item.character.firstName + ' ' + item.character.lastName}
-                imgRight={imageRight}
-                onPress={() => this.setState({selectPartner: item.id})}
-            />
-        );
-    }
-
-    renderSelectPartner = () => {
-        const { selectFriends, players } = this.state;
-        let gamePlayers = players.filter(player => selectFriends.includes(player.id));
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "rgba(0, 0, 0, 0.5)", }}>
-                <View style={{
-                    width: wp('80%'),
-                    height: hp('60%'),
-                    backgroundColor: '#881000',
-                    borderColor: '#E83528',
-                    borderWidth: 1,
-                    borderRadius: 5,
-                    padding: 8
-                }}>
-
-                    <Text style={{ fontSize: wp(3.5), fontWeight: 'bold', textAlign: 'center', marginTop: hp(2), color: '#fff' }}>Please select your partner!</Text>
-                    <View style={styles.modalFlatView}>
-                        <FlatList
-                            showsVerticalScrollIndicator={false}
-                            keyExtractor={item => item.id}
-                            data={gamePlayers}
-                            renderItem={({item}) => this._gamePlayer(item)}
-                        />
-                    </View>
-                    <View style={styles.modalBottom}>
-                        <SimpleButton
-                            onPress={() => this._startGame()}
-                            btnHeight={hp(6)}
-                            btnWidth={wp(75)}
-                            textColor={'#000000'} title={'START'}
-                        />
-                    </View>
-                </View>
-            </View>
-        );
-    }
-
 
     render() {
-        const { searchWord, players, searchPlayers, showFilterDropdown, showOnlyFriends, loading, showSelectPartner } = this.state;
+        const { searchWord, players, searchPlayers, showFilterDropdown, showOnlyFriends, loading } = this.state;
         let list = searchWord.length > 0?searchPlayers:players;
         list = list.filter(item => !showOnlyFriends || (showOnlyFriends && item.is_friend));
         return(
@@ -333,7 +252,7 @@ class SpadezCrew extends React.Component {
                 <View style={styles.mainContainer}>
                     <Header
                         onPress={() => this.props.navigation.goBack()}
-                        bgColor={'#250901'} title={'GAMENIGHT SPADEZ'} headerBorderWidth={0} imgLeftColor={'#fff'} imgRightColor={'#EFC76C'} imgLeft={images.ic_back} imgRight={images.ic_dropdow} onPressRight={() => this.setState({showFilterDropdown: !showFilterDropdown})} />
+                        bgColor={'#250901'} title={'SELECT PARTNER'} headerBorderWidth={0} imgLeftColor={'#fff'} imgRightColor={'#EFC76C'} imgLeft={images.ic_back} imgRight={images.ic_dropdow} onPressRight={() => this.setState({showFilterDropdown: !showFilterDropdown})} />
                     <View style={styles.searchView}>
                         <InputComponent placeholder={'Search'} placeholderTextColor={'#444444'} textColor={'#000000'} imgRight={images.ic_search} inputHeight={hp(6)} onChangeText={(txt) => this.onChangeText(txt)}/>
                     </View>
@@ -362,14 +281,6 @@ class SpadezCrew extends React.Component {
                         />
                     ) : null}
                 </View>
-                <Modal
-                    visible={showSelectPartner}
-                    transparent={true}
-                    animationType="fade"
-                    onRequestClose={() => this.setState({showSelectPartner: false})}
-                >
-                    {this.renderSelectPartner()}
-                </Modal>
             </SafeAreaView>
         );
     }
@@ -407,14 +318,6 @@ const styles= StyleSheet.create({
         marginTop: hp(2),
         alignItems: 'center'
         // backgroundColor:'gold',
-    },
-    modalFlatView: {
-        marginTop: hp(2),
-    },
-    modalBottom: {
-        marginTop: hp(4),
-        alignItems: 'center',
-        height: '20%',
     }
 });
 

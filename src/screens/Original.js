@@ -26,6 +26,7 @@ import {PLAYER_PROPS} from "../constants/constants";
 import {RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, mediaDevices} from "react-native-webrtc";
 import Character from "../Component/Character";
 import RTCView from "react-native-webrtc/RTCView";
+import {rgbaColor} from "react-native-reanimated/src/reanimated2/Colors";
 
 export const peerConnectionConfig = {
     'iceServers': [
@@ -79,7 +80,8 @@ class Original extends React.Component {
             winningScore: props.route.params?.score,
             toggleMic: true,
             remoteStreams: {},
-            webRTCConnections: {}
+            webRTCConnections: {},
+            loading: true
         }
     }
 
@@ -87,8 +89,6 @@ class Original extends React.Component {
         if (this.state.fPrivate !== true && ((this.props.preference !== undefined && this.props.auth !== undefined) ||
             (nextProps.preference !== undefined && this.props.auth !== undefined) ||
             (nextProps.preference !== undefined && nextProps.auth !== undefined))) {
-            const mode = Math.floor(Math.random() * 2)
-            const randomMode = mode === 0 ? 'solo' : 'partner'
 
             const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
             let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
@@ -103,7 +103,7 @@ class Original extends React.Component {
             const data = {
                 username: nextProps.auth.username,
                 userid: nextProps.auth.userid,
-                gameType: nextProps.preference.gameType === 'random' ? randomMode : nextProps.preference.gameType,
+                gameType: nextProps.preference.gameType === 'random' ? 'partner' : nextProps.preference.gameType,
                 gameStyle: nextProps.preference.gameStyle,
                 gameLobby: nextProps.preference.gameLobby,
                 winningScore: nextProps.preference.gameStyle === 'solo' ? nextProps.preference.soloPoints : nextProps.preference.partnerPoints,
@@ -123,8 +123,8 @@ class Original extends React.Component {
         }
     }
 
-    componentDidMount() {
-        this.init();
+    async componentDidMount() {
+        await this.init();
     }
 
     componentWillUnmount() {
@@ -140,14 +140,14 @@ class Original extends React.Component {
         }
     }
 
-    init = () => {
+    init = async () => {
         const preference = this.props.preference
         const auth = this.props.auth
         const { roomid, fPrivate } = this.state
-        console.log('roomid, fPrivate', roomid, fPrivate);
+        console.log('roomid, fPrivate', roomid, fPrivate, preference, auth);
         this.trickAnimate = []
 
-        if (fPrivate === true && roomid !== undefined && roomid !== null) {
+        if (roomid !== undefined && roomid !== null) {
             const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
             let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
             let config = {
@@ -172,9 +172,7 @@ class Original extends React.Component {
                 else { console.log(res.message) }
             })
         }
-        else if (fPrivate !== true && preference !== undefined && auth !== undefined) {
-            const mode = Math.floor(Math.random() * 2)
-            const randomMode = mode === 0 ? 'solo' : 'partner'
+        else if (!fPrivate && preference !== undefined && auth !== undefined) {
             const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
             let character = Object.assign({}, characters.find(item => item.id === characterSelectedId));
             let config = {
@@ -186,16 +184,17 @@ class Original extends React.Component {
                 spadezTable,
             }
             const data = {
+                roomid: roomid,
                 username: auth.username,
                 userid: auth.userid,
-                gameType: preference.gameType === 'random' ? randomMode : preference.gameType,
+                gameType: preference.gameType === 'random' ? 'partner' : preference.gameType,
                 gameStyle: preference.gameStyle,
                 gameLobby: preference.gameLobby,
                 winningScore: preference.gameStyle === 'solo' ? preference.soloPoints : preference.partnerPoints,
                 config
             }
             // this.socket.emit('joinGame', data)
-            gameServices.joinGame(data, (res) => {
+            await gameServices.joinGame(data, (res) => {
                 if (res.isSuccess) {
                     this.setPresenceHook(res.response.roomid, auth.userid);
                     this.setState({ roomid: res.response.roomid })
@@ -364,7 +363,7 @@ class Original extends React.Component {
         console.log('connection hook', offer);
 
         if(!offer){
-            return setTimeout(() => this.acceptJoin(connectionId), 1000);
+            return;
         }
 
         console.log('accepted connection hook', offer);
@@ -451,6 +450,7 @@ class Original extends React.Component {
     }
 
     playGame = (roomid) => {
+        this.setState({loading: false});
     this.unSubscriber = firestore()
         .collection('rooms')
         .doc(roomid)
@@ -1370,14 +1370,15 @@ class Original extends React.Component {
     }
 
     render() {
-        const { game, renigBook, players, toggleMic } = this.state
-        const curPlayerId = (game.turnIndex + game.leadIndex) % 4        
+        const { game, renigBook, players, toggleMic, loading, teamId } = this.state
+        const curPlayerId = (game.turnIndex + game.leadIndex) % 4;
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
                     {/*<Header onPress={() => this.props.navigation.goBack()} onPressRight={() => this.props.navigation.navigate('Setting')} bgColor={'#2f0801'} headerBorderBottomWidth={0} title={'GAMENIGHT SPADEZ'} imgLeftColor={'#fff'}  imgLeft={images.ic_back} imgRight={images.ic_settings} />*/}
                     <Header onPress={() => this.props.navigation.goBack()} bgColor={'#2f0801'} headerBorderBottomWidth={0} title={'GAMENIGHT SPADEZ'} imgLeftColor={'#fff'}  imgLeft={images.ic_back} />
                     <ImageBackground source={images.gamescreen}  style={styles.backgroundImage}>
+                        { loading ? <View style={styles.gameMessage}><Text style={styles.messageText}>Loading....</Text></View>: null }
                         <View style={styles.textView}>
                             <Text style={styles.mainText}>ORIGINAL</Text>
                         </View>
@@ -1469,14 +1470,20 @@ class Original extends React.Component {
                                     return (
                                         <View key={i}>
                                             { player.config &&
-                                                <TouchableOpacity style={[{ flex: 1,
-                                                    position: 'absolute',
-                                                    width: 64,
-                                                    height: 64,
-                                                    zIndex: 300,
-                                                    borderRadius: 48,
-                                                    padding: 2,
-                                                }, player.style, curPlayerId === player.playerPosition?styles.curPlayer:{}]} onPress={() => {}} >
+                                                <TouchableOpacity
+                                                    style={[
+                                                        { flex: 1,
+                                                            position: 'absolute',
+                                                            width: 64,
+                                                            height: 64,
+                                                            zIndex: 300,
+                                                            borderRadius: 48,
+                                                            padding: 2,
+                                                        },
+                                                        player.style,
+                                                        curPlayerId === player.playerPosition?styles.curPlayer:{}
+                                                    ]}
+                                                    onPress={() => {}} >
                                                     <>
                                                         <View
                                                             style={{
@@ -1494,7 +1501,17 @@ class Original extends React.Component {
                                                             />
                                                         </View>
                                                         { i === game.dealerIndex ? <Image  style={{ position: 'absolute', width: 16, height: 16, zIndex: 400, right: 4, bottom: 4 }} source={images.ic_dealer} /> : null}
-                                                        { player.userid !== this.props.auth.userid ? <Text style={styles.playerName} ellipsizeMode={"tail"} numberOfLines={1}>{player.config.character.firstName + " " + player.config.character.lastName}</Text> : null}
+                                                        { player.userid !== this.props.auth.userid ?
+                                                            <Text
+                                                                style={[
+                                                                    styles.playerName,
+                                                                    ((teamId > -1) && game.teams && game.teams[teamId].players.includes(player.userid))?styles.teamMember:{}
+                                                                ]}
+                                                                ellipsizeMode={"tail"}
+                                                                numberOfLines={1}>
+                                                                {player.config.character.firstName + " " + player.config.character.lastName}
+                                                            </Text>
+                                                            : null}
                                                         { this.renderAudio(player) }
                                                     </>
                                                 </TouchableOpacity>}
@@ -1576,6 +1593,20 @@ const styles = StyleSheet.create({
         flex: 1,
         resizeMode: 'contain', // or 'stretch'
     },
+    gameMessage: {
+        position: 'absolute',
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: rgbaColor(0,0,0,0.4),
+        zIndex: 10000
+    },
+    messageText: {
+        color: '#fff',
+        fontSize: wp(5),
+    },
     mainText: {
         fontSize: wp(5.5),
         // fontWeight:'bold',
@@ -1649,6 +1680,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
         paddingBottom: 4,
+    },
+    teamMember: {
+        color: '#E83528'
     },
     curPlayer: {
         borderWidth: 3,

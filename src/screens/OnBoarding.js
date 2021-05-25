@@ -30,6 +30,7 @@ class OnBoarding extends Component {
         const { appStart, loginSuccess, logout } = this.props;
         const provider =  await AsyncStorage.getItem('authProvider');
         const credential = await AsyncStorage.getItem('credential');
+        console.log('auth', provider, credential);
         this.setState({loading: true});
         if(provider && credential){
             let authCredential = JSON.parse(credential);
@@ -63,9 +64,11 @@ class OnBoarding extends Component {
                                 return;
                             }
                         }
+                        console.log('error', res.message);
                         logout();
                         this.setState({loading: false});
                     });
+                    return;
                 }
             }
         }

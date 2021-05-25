@@ -16,9 +16,10 @@ class GameLobby extends React.Component {
         const { userid } = this.props.auth;
         this.props.setPreferences({userId: userid, preferences});
         if (this.props.preference.privateMatch) {
-            this.props.navigation.navigate('SpadezCrew')
-        }
-        else {
+            this.props.navigation.navigate('SpadezCrew');
+        } else if (this.props.preference.gameType === 'partner'){
+            this.props.navigation.navigate('SelectPartner')
+        } else {
             this.props.navigation.navigate('Original')
         }
     }

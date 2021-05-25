@@ -102,7 +102,7 @@ class GameType extends React.Component {
 
     onPrivateMatchButtonClicked = () => {
         const selected_type_id = this.state.selected_type_id
-        const selected_game_type = this.state.gameTypes[selected_type_id]
+        const selected_game_type = this.state.gameTypes[selected_type_id].typeId
         const { setPreferences } = this.props;
         const { userid } = this.props.auth
         setPreferences({userId: userid, preferences: {gameType: selected_game_type, privateMatch: true}});

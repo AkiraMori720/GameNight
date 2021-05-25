@@ -15,6 +15,7 @@ import EditPlayer from "./EditPlayer";
 import EditAvatar from "./EditAvatar";
 import Original from "./Original";
 import LeaderBoard from "./LeaderBoard";
+import SelectPartner from "./SelectPartner";
 
 const InsideStackNav = createStackNavigator();
 
@@ -56,6 +57,10 @@ const InsideStack = () => {
             <InsideStackNav.Screen
                 name='SpadezCrew'
                 component={SpadezCrew}
+            />
+            <InsideStackNav.Screen
+                name='SelectPartner'
+                component={SelectPartner}
             />
             <InsideStackNav.Screen
                 name='Original'

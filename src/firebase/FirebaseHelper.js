@@ -27,19 +27,19 @@ class firebaseServices {
         // Create a Google credential with the token
         const googleCredential = auth.GoogleAuthProvider.credential(idToken);
 
+        console.log('googleCredential', googleCredential, idToken);
         // const provider = new firebase.auth.GoogleAuthProvider();
         auth()
             .signInWithCredential(googleCredential)
             // .signInWithPopup(provider)
             .then(async (res) => {
-                const token = (await auth().currentUser.getIdTokenResult()).token;///res.credential.accessToken;
                 const user = Object.assign({}, res.user);
                 let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
-                console.log('google user', user._user, snapshot.data(), token);
+                console.log('google user', user._user, snapshot.data(), idToken);
                 if (snapshot && snapshot.data()) {
-                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token: idToken })
                 } else {
-                    self.setProfileForUser(user, token, callback)
+                    self.setProfileForUser(user, idToken, callback)
                 }
                 // callback({ isSuccess: true, token, user })
                 // AsyncStorage.setItem('google_token', token)
@@ -76,58 +76,18 @@ class firebaseServices {
             .signInWithCredential(facebookCredential)
             // .signInWithPopup(provider)
             .then(async (res) => {
-                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
                 const user = res.user;
                 let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
-                console.log('facebook user', user._user, snapshot.data(), token);
+                console.log('facebook user', user._user, snapshot.data(), data.accessToken);
                 if (snapshot && snapshot.data()) {
-                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
+                    callback && callback({ isSuccess: true, response: snapshot.data(), token: data.accessToken })
                 } else {
-                    self.setProfileForUser(user, token, callback)
+                    self.setProfileForUser(user, data.accessToken, callback)
                 }
                 // callback({ isSuccess: true, token, user })
             }).catch(function (error) {
                 callback && callback({ isSuccess: false, response: null, message: error.message });
             });
-    }
-
-    signinWithFacebook = async function (callback) {
-        let self = this;
-
-        const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
-
-        if (result.isCancelled) {
-            throw 'User cancelled the login process';
-        }
-
-        // Once signed in, get the users AccesToken
-        const data = await AccessToken.getCurrentAccessToken();
-
-        if (!data) {
-            throw 'Something went wrong obtaining access token';
-        }
-
-        // Create a Firebase credential with the AccessToken
-        const facebookCredential = auth.FacebookAuthProvider.credential(data.accessToken);
-        // const provider = new firebase.auth.FacebookAuthProvider();
-
-        auth()
-            .signInWithCredential(facebookCredential)
-            // .signInWithPopup(provider)
-            .then(async (res) => {
-                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
-                const user = res.user;
-                let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
-                console.log('facebook user', user._user, snapshot.data(), token);
-                if (snapshot && snapshot.data()) {
-                    callback && callback({ isSuccess: true, response: snapshot.data(), token })
-                } else {
-                    self.setProfileForUser(user, token, callback)
-                }
-                // callback({ isSuccess: true, token, user })
-            }).catch(function (error) {
-            callback && callback({ isSuccess: false, response: null, message: error.message });
-        });
     }
 
     signinWithApple = async function (callback) {
@@ -149,7 +109,7 @@ class firebaseServices {
             throw 'Something went wrong obtaining access token';
         }
 
-        // Create a Firebase credential from the response
+        // Create a Apple credential from the response
         const {identityToken, nonce} = appleAuthRequestResponse;
         const appleCredential = auth.AppleAuthProvider.credential(identityToken, nonce);
 
@@ -157,9 +117,9 @@ class firebaseServices {
             .signInWithCredential(appleCredential)
             // .signInWithPopup(provider)
             .then(async (res) => {
-                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
                 const user = res.user;
                 let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
+                let token = { identityToken, nonce };
                 console.log('apple user', user._user, snapshot.data(), token);
                 if (snapshot && snapshot.data()) {
                     callback && callback({ isSuccess: true, response: snapshot.data(), token })
@@ -228,14 +188,14 @@ class firebaseServices {
                 credential = auth.FacebookAuthProvider.credential(token);
                 break;
             case 'apple':
-                credential = auth.AppleAuthProvider.credential(token);
+                let {identityToken, nonce} = token
+                credential = auth.AppleAuthProvider.credential(identityToken, nonce);
                 break;
         }
-
+        console.log('auth', provider, credential);
         auth()
             .signInWithCredential(credential)
             .then(async (res) => {
-                const token = (await auth().currentUser.getIdTokenResult()).token;////res.credential.accessToken;
                 const user = res.user;
                 let snapshot = await firestore().collection("userProfile").doc(user._user.uid).get();
                 console.log('oauth user', user._user, snapshot.data(), token);
@@ -372,10 +332,19 @@ class firebaseServices {
             .get()
         .then(doc => {
             if (!doc.exists) {
+                let initPreferences = {
+                    gameType: 'solo',
+                    gameStyle: 0,
+                    gameLobby: null,
+                    soloPoints: 70,
+                    partnerPoints: 100,
+                    privateMatch: false,
+                    ...preferences
+                };
                 firestore()
                 .collection("userPreferences")
                 .doc(userId)
-                .set(preferences)
+                .set(initPreferences)
                 .then(response => {
                     callback && callback({ isSuccess: true, response: doc.data(), message: "Preference updated successfully" });
                 }).catch(error => {

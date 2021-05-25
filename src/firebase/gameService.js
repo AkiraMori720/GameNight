@@ -5,11 +5,6 @@ import store from "../store/createStore";
 import {setUser} from "../actions/login";
 import AsyncStorage from "@react-native-community/async-storage";
 
-const asyncFilter = async (arr, predicate) => {
-    const results = await Promise.all(arr.map(predicate));
-    return arr.filter((_v, index) => results[index]);
-}
-
 class firebaseServices {
     setOverbookPenalty = (winScore) => {
         var penaltyScore = 0;
@@ -73,30 +68,52 @@ class firebaseServices {
         return cards;
     };
 
-    setTeam = (players_num) => {
+    setTeam = (players_num, team0 = null) => {
         if (players_num < 4)
             return false;
         let tm = [0, 1, 2, 3];
-        let ranTeam = this.shuffle(tm);
         let teams = []
-        teams.push({
-            gameScore: 0,
-            lostScore: 0,
-            bagsTaken: 0,
-            blind: 1,
-            currentRoundBid: -1,
-            currentRoundTricksTaken: 0,
-            players: [ranTeam[0], ranTeam[1]]
-        });
-        teams.push({
-            gameScore: 0,
-            lostScore: 0,
-            bagsTaken: 0,
-            blind: 1,
-            currentRoundBid: -1,
-            currentRoundTricksTaken: 0,
-            players: [ranTeam[2], ranTeam[3]]
-        });
+        if(team0 && team0.length === 2){
+            let team1 = tm.filter(t=>!team0.includes(t));
+            teams.push({
+                gameScore: 0,
+                lostScore: 0,
+                bagsTaken: 0,
+                blind: 1,
+                currentRoundBid: -1,
+                currentRoundTricksTaken: 0,
+                players: team0
+            });
+            teams.push({
+                gameScore: 0,
+                lostScore: 0,
+                bagsTaken: 0,
+                blind: 1,
+                currentRoundBid: -1,
+                currentRoundTricksTaken: 0,
+                players: team1
+            });
+        } else {
+            let ranTeam = this.shuffle(tm);
+            teams.push({
+                gameScore: 0,
+                lostScore: 0,
+                bagsTaken: 0,
+                blind: 1,
+                currentRoundBid: -1,
+                currentRoundTricksTaken: 0,
+                players: [ranTeam[0], ranTeam[1]]
+            });
+            teams.push({
+                gameScore: 0,
+                lostScore: 0,
+                bagsTaken: 0,
+                blind: 1,
+                currentRoundBid: -1,
+                currentRoundTricksTaken: 0,
+                players: [ranTeam[2], ranTeam[3]]
+            });
+        }
         return teams;
     }
 
@@ -245,7 +262,7 @@ class firebaseServices {
             }
         }
 
-        game.roundScores.push(aRoundScores);
+        game.roundScores = [...game.roundScores, aRoundScores];
 
         return [maxScore, minScore];
     }
@@ -335,18 +352,19 @@ class firebaseServices {
     
 
 
-    createPrivateGame = (data, callback = null) => {
+    createGame = (data, callback = null) => {
         let room = {
             name: 'room name',
             started: false,
             waiting: true,
-            private: true,
+            private: data.private,
             players_num: 1,
             game: {
-                gameType: data.type,
-                gameStyle: data.style,
-                gameLobby: data.lobby,
+                gameType: data.gameType,
+                gameStyle: data.gameStyle,
+                gameLobby: data.gameLobby,
                 winningScore: data.winningScore,
+                partners: data.partners,
                 penaltyScore: this.setOverbookPenalty(data.winningScore),
                 cardsPlayedThisRound: [],
                 trickCards: [],
@@ -392,17 +410,20 @@ class firebaseServices {
             })
     }
     getOnlinePlayers = async(roomId, players) => {
-        return await asyncFilter(players,
-            (async p => {
-                const reference = database().ref(`/online/${roomId}/${p.userid}`);
-                console.log(`Room: ${roomId} Player: ${p.userid} Presence:`, reference);
-                if(reference){
-                    const presence = await reference.once('value');
-                    return presence.val();
+        let onlinePlayers = [];
+        console.log(`Room: ${roomId} players: ${players}`);
+        for( let i = 0; i<players.length ; i++){
+            let p= players[i];
+            const reference = database().ref(`/online/${roomId}/${p.userid}`);
+            console.log(`Room: ${roomId} Player: ${p.userid} Presence:`, reference);
+            if(reference){
+                const presence = await reference.once('value');
+                if(presence.val()){
+                    onlinePlayers.push(p);
                 }
-                return false;
-            })
-        );
+            }
+        }
+        return onlinePlayers;
     }
     joinPrivateGame = (data, callback = null) => {
         firestore()
@@ -419,7 +440,7 @@ class firebaseServices {
                     let player = {
                         username: data.username,
                         userid: data.userid,
-                        playerPosition: 0,
+                        playerPosition: room.game.players.length,
                         cards: [],
                         currentRoundBid: -1,
                         currentRoundTricksTaken: 0,
@@ -435,7 +456,18 @@ class firebaseServices {
                         room.waiting = false;
                         room.started = true;
                         if(game.gameType === 'partner') {
-                            room.game.teams = this.setTeam(room.game.players.length)
+                            if(room.game.partners){
+                                let teamIndexes = room.game.partners.map(partner_id => {
+                                    for (let i=0; i<room.game.players.length; i++){
+                                        if(room.game.players[i].userid === partner_id){
+                                            return i;
+                                        }
+                                    }
+                                });
+                                room.game.teams = this.setTeam(room.game.players.length, teamIndexes);
+                            } else {
+                                room.game.teams = this.setTeam(room.game.players.length);
+                            }
                         }
                         this.initGameForRound(room.game)
                     }
@@ -450,107 +482,124 @@ class firebaseServices {
                 console.error(error)
             })
     }
-   joinGame = (data, callback = null) => {
-        firestore()
+   joinGame = async (data, callback = null) => {
+        console.log('join Game', data);
+        let querySnapshot = await firestore()
             .collection('rooms')
-            .get()
-            .then(async querySnapshot => {
-                console.log('Total rooms: ', querySnapshot.size);
-                let fJoined = false;
-                await Promise.all(querySnapshot.docs.map(async documentSnapshot => {
-                    let room = documentSnapshot.data()
-                    if (!room.started && !room.private && room.game) {
-                        if (room.game.gameType === data.gameType &&
-                            room.game.gameStyle === data.gameStyle &&
-                            room.game.gameLobby === data.gameLobby &&
-                            room.game.winningScore === data.winningScore) {
+            .get();
 
-                            // Filter Online Users
-                            room.game.players = await this.getOnlinePlayers(documentSnapshot.id, room.game.players);
-                            room.game.players = room.game.players.filter(player => player.userid !== data.userid);
+        console.log('Total rooms: ', querySnapshot.size);
+        let fJoined = false;
+        for(let i = 0; i < querySnapshot.docs.length; i++){
+            let documentSnapshot = querySnapshot.docs[i];
+            let room = documentSnapshot.data()
+            if (!room.started && !room.private && room.game) {
+                if (room.game.gameType === data.gameType &&
+                    room.game.gameStyle === data.gameStyle &&
+                    room.game.gameLobby === data.gameLobby &&
+                    room.game.winningScore === data.winningScore) {
 
-                            console.log('Rooms Users: ', room.game.players.length);
+                    // Filter Online Users TODO check lantency
+                    console.log('Rooms Users: ', room.game.players);
+                    room.game.players = await this.getOnlinePlayers(documentSnapshot.id, room.game.players);
+                    console.log('Rooms Users: ', room.game.players);
+                    room.game.players = room.game.players.filter(player => player.userid !== data.userid);
 
-                            if (room.game.players.length < 4) {
-                                let player = {
-                                    username: data.username,
-                                    userid: data.userid,
-                                    playerPosition: room.game.players.length,
-                                    cards: [],
-                                    currentRoundBid: -1,
-                                    currentRoundTricksTaken: 0,
-                                    bagsTaken: 0,
-                                    gameScore: 0,
-                                    isShownVoidInSuit: [false, false, false, false],
-                                    config: data.config
+                    console.log('Rooms Users: ', room.game.players);
+
+                    if (room.game.players.length < 4) {
+                        let player = {
+                            username: data.username,
+                            userid: data.userid,
+                            playerPosition: room.game.players.length,
+                            cards: [],
+                            currentRoundBid: -1,
+                            currentRoundTricksTaken: 0,
+                            bagsTaken: 0,
+                            gameScore: 0,
+                            isShownVoidInSuit: [false, false, false, false],
+                            config: data.config
+                        }
+
+                        room.game.players.push(player)
+                        room.players_num = room.game.players.length;
+                        if (room.players_num === 4) {
+                            room.waiting = false;
+                            room.started = true;
+                            if(room.game.gameType === 'partner') {
+                                if (room.game.partners) {
+                                    let teamIndexes = room.game.partners.map(partner_id => {
+                                        for (let i = 0; i < room.game.players.length; i++) {
+                                            if (room.game.players[i].userid === partner_id) {
+                                                return i;
+                                            }
+                                        }
+                                    });
+                                    room.game.teams = this.setTeam(room.game.players.length, teamIndexes);
+                                } else {
+                                    room.game.teams = this.setTeam(room.game.players.length);
                                 }
-
-                                room.game.players.push(player)
-                                room.players_num = room.game.players.length;
-                                if (room.players_num === 4) {
-                                    room.waiting = false;
-                                    room.started = true;
-                                    if(room.game.gameType === 'partner') {
-                                        room.game.teams = this.setTeam(room.game.players.length)
-                                    }
-                                    this.initGameForRound(room.game)
-                                }
-
-                                console.log('Game Room', room);
-                                // TODO change
-                                this.updateRoom(documentSnapshot.id, room, callback)
-                                fJoined = true;
                             }
+
+                            this.initGameForRound(room.game);
                         }
+
+                        console.log('Game Room', room);
+                        // TODO change
+                        this.updateRoom(documentSnapshot.id, room, callback)
+                        fJoined = true;
+                        break;
                     }
-                }));
-                if (!fJoined) {
-                    let room = {
-                        name: 'room name',
-                        started: false,
-                        waiting: true,
-                        private: false,
-                        players_num: 1,
-                        game: {
-                            gameType: data.gameType,
-                            gameStyle: data.gameStyle,
-                            gameLobby: data.gameLobby,
-                            winningScore: data.winningScore,
-                            penaltyScore: this.setOverbookPenalty(data.winningScore),
-                            cardsPlayedThisRound: [],
-                            trickCards: [],
-                            roundBooks: [],
-                            roundNumber: 0,
-                            dealerIndex: 0,
-                            leadIndex: 0,
-                            turnIndex: 0,
-                            isSpadesBroken: false,
-                            currentMoveStage: 'None',
-                            roundScores: [],
-                            roundTeamScores: [],
-                            players: [],
-                            teams: [],
-                            bidding: 0,
-                            renig: 0
-                        }
-                    }
-                    let player = {
-                        userid: data.userid,
-                        username: data.username,
-                        playerPosition: 0,
-                        cards: [],
-                        currentRoundBid: -1,
-                        currentRoundTricksTaken: 0,
-                        bagsTaken: 0,
-                        gameScore: 0,
-                        isShownVoidInSuit: [false, false, false, false],
-                        config: data.config
-                    }
-                    room.game.players.push(player);
-                    // TODO change
-                    this.addRoom(room, callback)
                 }
-            });
+            }
+        }
+
+        if (!fJoined) {
+            let room = {
+                name: 'room name',
+                started: false,
+                waiting: true,
+                private: false,
+                players_num: 1,
+                game: {
+                    gameType: data.gameType,
+                    gameStyle: data.gameStyle,
+                    gameLobby: data.gameLobby,
+                    winningScore: data.winningScore,
+                    penaltyScore: this.setOverbookPenalty(data.winningScore),
+                    cardsPlayedThisRound: [],
+                    trickCards: [],
+                    roundBooks: [],
+                    roundNumber: 0,
+                    dealerIndex: 0,
+                    leadIndex: 0,
+                    turnIndex: 0,
+                    isSpadesBroken: false,
+                    currentMoveStage: 'None',
+                    roundScores: [],
+                    roundTeamScores: [],
+                    players: [],
+                    teams: [],
+                    bidding: 0,
+                    renig: 0
+                }
+            }
+            let player = {
+                userid: data.userid,
+                username: data.username,
+                playerPosition: 0,
+                cards: [],
+                currentRoundBid: -1,
+                currentRoundTricksTaken: 0,
+                bagsTaken: 0,
+                gameScore: 0,
+                isShownVoidInSuit: [false, false, false, false],
+                config: data.config
+            }
+            room.game.players.push(player);
+            // TODO change
+            this.addRoom(room, callback)
+        }
 
     }
 
@@ -658,7 +707,7 @@ class firebaseServices {
                 game.players[data.playerId].currentRoundBid = parseInt(data.bid);
                 game.turnIndex++;
                 if (game.gameType === 'partner') {
-                    for (var i = 0; i < game.teams.length; i++) {
+                    for (let i = 0; i < game.teams.length; i++) {
                         if (game.teams[i].blind === 1) {
                             const player0 = game.teams[i].players[0];
                             const player1 = game.teams[i].players[1];
