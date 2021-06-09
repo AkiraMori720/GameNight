@@ -71,19 +71,21 @@ class Signup extends React.Component {
             isContainLetter,
             isContainNum,
             isContainSpecial } = this.state
-        const { logout, loginSuccess } = this.props;
+        const { navigation } = this.props;
 
         if (isValidEmail && isLeast6Char && isContainLetter && isContainNum && isContainSpecial) {
             this.setState({loading: true});
             apiService.signUpWithEmailAndPassword(email, password, async (res) => {
                 if (res.isSuccess) {
-                    await AsyncStorage.setItem('authProvider', 'email');
-                    await AsyncStorage.setItem('credential', JSON.stringify({ email, password }));
                     showToast('Signup Success!');
-                    loginSuccess(res.response);
+                    navigation.navigate('Login');
                 } else {
-                    showToast('Login Failed!');
-                    console.log('signup error: ', res.message);
+                    console.log('signup error: ', res);
+                    if (res.message.indexOf('email-already-in-user')) {
+                        showToast('This email address is already in use by another account.');
+                    } else {
+                        showToast('Signup Failed!');
+                    }
                 }
                 this.setState({loading: false});
             })
