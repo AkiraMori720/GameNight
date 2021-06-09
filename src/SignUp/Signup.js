@@ -79,6 +79,7 @@ class Signup extends React.Component {
                 if (res.isSuccess) {
                     await AsyncStorage.setItem('authProvider', 'email');
                     await AsyncStorage.setItem('credential', JSON.stringify({ email, password }));
+                    showToast('Signup Success!');
                     loginSuccess(res.response);
                 } else {
                     showToast('Login Failed!');
@@ -88,7 +89,7 @@ class Signup extends React.Component {
             })
         }
         else {
-            showToast('The email and password is invalid!')
+            showToast('The email and password is invalid!');
             this.setState({loading: false});
         }
     }
