@@ -22,6 +22,7 @@ import { setUser as setUserAction } from "../actions/login";
 import {getCharacterAvatar} from "../common/character";
 import {showToast} from "../common/info";
 import Character from "../Component/Character";
+import equal from 'deep-equal';
 
 class UserProfile extends React.Component {
     constructor(props) {
@@ -53,7 +54,7 @@ class UserProfile extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if(prevProps.auth !== this.props.auth){
+        if(!equal(prevProps.auth, this.props.auth)){
             this.setCharacter();
         }
     }
@@ -150,14 +151,14 @@ class UserProfile extends React.Component {
                                 }}>Crew</Text>
                             </View>
                             <View style={styles.img}>
-                                <Character
+                                {character && <Character
                                     gender={character.gender}
                                     hair={character.hair}
                                     eyerow={character.eyerow}
                                     eye={character.eye}
                                     nose={character.nose}
                                     lip={character.lip}
-                                />
+                                />}
                             </View>
                             <TouchableOpacity onPress={this.onEditPlayer}>
                                 <Image style={styles.icon} source={images.ic_edit_2} />

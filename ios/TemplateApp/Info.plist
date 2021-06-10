@@ -66,6 +66,8 @@
 	<string>GameNight Spadez wants to access your location for better results.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>GameNight Spadez wants to access your Photo Library for attachments</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GameNight Spadez wants to access your Microphone for attachments</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>GreatVibes-Regular.otf</string>
