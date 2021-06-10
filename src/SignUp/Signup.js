@@ -190,6 +190,7 @@ class Signup extends React.Component {
                             placeholder={'Email'}
                             keyboardType="email-address"
                             value={email}
+                            autoCapitalize={'none'}
                             onChangeText={value => this.setState({ email: value, isValidEmail: this.validateEmail(value) })}
                         />
                         <View style={{ marginVertical: wp(2), marginRight: wp(28) }}>
@@ -207,6 +208,7 @@ class Signup extends React.Component {
                             imgRight={images.ic_view_pass}
                             placeholder={'Password'}
                             value={password}
+                            autoCapitalize={'none'}
                             onChangeText={value => this.setState({
                                 password: value,
                                 isLeast6Char: value && value.length >= 6,

@@ -79,6 +79,7 @@ class Login extends React.Component {
                             placeholder={'Email'}
                             keyboardType="email-address"
                             value={email}
+                            autoCapitalize={'none'}
                             onChangeText={value => this.setState({ email: value, isValidEmail: this.validateEmail(value) })}
                         />
                     </View>
@@ -91,6 +92,7 @@ class Login extends React.Component {
                         bgColor={'#5c0801'}
                         placeholder={'Password'}
                         value={password}
+                        autoCapitalize={'none'}
                         onChangeText={value => this.setState({password: value, isLeast6Char: value && value.length >= 6})}
                     />
                     <View style={{flexDirection:'row',alignItems: 'center',marginTop:hp(1.5)}}>

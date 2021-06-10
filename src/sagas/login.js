@@ -14,7 +14,10 @@ import gameServices from "../firebase/gameService";
 
 const handleLoginSuccess = function* handleLoginSuccess({ data }) {
 	console.log('loginSuccess', data);
-	yield FirebaseHelper.setFcmToken(data.userid);
+	try{
+		yield FirebaseHelper.setFcmToken(data.userid);
+	} catch (e) {
+	}
 	gameServices.subscribe(data.userid);
 	yield put(appStart({root : ROOT_INSIDE}));
 };
