@@ -168,7 +168,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     viewMiddle: {
-        height: hp(18),
         marginTop: hp(4)
         // backgroundColor:'orange',
     },

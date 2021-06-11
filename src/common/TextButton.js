@@ -21,19 +21,17 @@ export default class TextButton extends React.Component {
 
 const styles= StyleSheet.create({
     container:{
-        height:hp(7),
+        width: wp(80),
         alignItems:'center',
         justifyContent:'center',
     },
     containerTouchable: {
         flexDirection:'row',
         alignItems: 'center',
-        width:wp(60),
         borderRadius:wp(0.5),
 
     },
     containerTouchableText: {
-        width:wp(60),
         // backgroundColor: "red",
         alignItems: 'center',
     },

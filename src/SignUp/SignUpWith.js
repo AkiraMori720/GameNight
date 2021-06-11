@@ -134,7 +134,10 @@ class SignUpWith extends React.Component {
                             <View style={{marginTop:'6%'}}>
                                 <IconButton onPress={() => this.props.navigation.navigate('SignUp')} textPaddingLeft={wp(15)} btnWidth={wp(80)} iconPaddingLeft={wp(6)} btnHeight={hp(6)} btnRadius={wp(15)}   imgLeftColor={'#000000'} iconHeight={hp(5)} iconWidth={wp(5)}  imgLeft={images.ic_email} textColor={'#000000'} title={'EMAIL'} />
                             </View>
-                            <TextButton onPress={() => this.props.navigation.navigate('Login')} title={'Already have an account?'}/>
+                            <View style={{marginTop:'6%'}}>
+                                <IconButton onPress={() => this.props.navigation.navigate('Login')} textPaddingLeft={wp(15)} btnWidth={wp(80)} iconPaddingLeft={wp(4)} btnHeight={hp(6)} btnRadius={wp(15)}  textColor={'#000000'} title={'LOGIN'} />
+                            </View>
+                            {/*<TextButton onPress={() => this.props.navigation.navigate('Login')} title={'Already have an account?'}/>*/}
                         </View>
                     </View>
                 </View>

@@ -27,6 +27,7 @@ import {RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, mediaDevices}
 import Character from "../Component/Character";
 import RTCView from "react-native-webrtc/RTCView";
 import {rgbaColor} from "react-native-reanimated/src/reanimated2/Colors";
+import {showToast} from "../common/info";
 
 export const peerConnectionConfig = {
     'iceServers': [
@@ -203,6 +204,8 @@ class Original extends React.Component {
                     })
                 }
                 else {
+                    this.setState({ loading: false });
+                    showToast('Loading Failed');
                     console.log(res.message)
                 }
             })
@@ -265,12 +268,19 @@ class Original extends React.Component {
     }
 
     joinRoom = async (roomId) => {
-        await this.startLocalStream();
+        try{
+            await this.startLocalStream();
+        } catch (e) {
+        }
 
         const snapshot = await firestore()
             .collection('rooms')
             .doc(roomId)
             .get();
+
+        if(!snapshot || !snapshot.data()){
+            return;
+        }
         const room = snapshot.data();
         const userId = this.props.auth.userid;
 
@@ -281,7 +291,10 @@ class Original extends React.Component {
             let connectionId = this.getPeerConnectionId(userId, player.userid);
 
             if(!this.state.webRTCConnections[connectionId]){
-                await this.requestJoin(connectionId);
+                try{
+                    await this.requestJoin(connectionId);
+                } catch (e){
+                }
             }
         }
     }

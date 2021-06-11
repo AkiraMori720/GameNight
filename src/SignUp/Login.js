@@ -50,7 +50,7 @@ class Login extends React.Component {
                     }
                 } else {
                     console.log("login error: ", res.message);
-                    if(res.message.indexOf('user-not-found')){
+                    if(res.message.indexOf('user-not-found') >= 0){
                         showToast('The user is not registered!');
                     } else {
                         showToast('The email and password is invalid!');

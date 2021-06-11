@@ -13,7 +13,7 @@ export default class TickCircle extends React.Component {
                     <Image style={styles.img} source={this.props.img}/>
                 </View>
                     <View style={styles.containerText}>
-                        <Text style={styles.text}>{this.props.title}</Text>
+                        <Text style={styles.text} numberOfLines={2}>{this.props.title}</Text>
                     </View>
 
             </View>
@@ -24,7 +24,6 @@ export default class TickCircle extends React.Component {
 const styles= StyleSheet.create({
     container:{
         flexDirection:'row',
-        height:hp(4),
         alignItems:'center',
         // justifyContent:'center',
         // marginStart: wp(2),

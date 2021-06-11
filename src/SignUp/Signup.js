@@ -81,7 +81,7 @@ class Signup extends React.Component {
                     navigation.navigate('Login');
                 } else {
                     console.log('signup error: ', res);
-                    if (res.message.indexOf('email-already-in-user')) {
+                    if (res.message.indexOf('email-already-in-user') >= 0) {
                         showToast('This email address is already in use by another account.');
                     } else {
                         showToast('Signup Failed!');
@@ -101,7 +101,7 @@ class Signup extends React.Component {
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "rgba(0, 0, 0, 0.5)", }}>
                 <View style={{
                     width: wp('85%'),
-                    height: hp('25%'),
+                    height: hp('30%'),
                     backgroundColor: '#fff',
                     borderColor: '#fff',
                     borderWidth: 1,
@@ -112,17 +112,14 @@ class Signup extends React.Component {
 
 
                     <Text style={{ fontSize: wp('4%'), fontWeight: 'bold', textAlign: 'left', marginTop: hp(3), }}>Sign Up</Text>
-                    <View style={{ flex: 2, justifyContent: 'center', alignItems: 'center', marginTop: hp(3) }}>
-                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', width: wp('80%'), justifyContent: 'center' }}>
-                            <Text style={{ fontSize: wp('4%'), color: '#000000', }}>By signing up, you agree with the </Text>
-                            <TouchableOpacity onPress={() => this.term()}>
-                                <Text style={{ color: '#C42D3E', fontSize: wp('4%'), textDecorationLine: 'underline', }}>Terms and</Text>
-                            </TouchableOpacity>
+                    <View style={{ justifyContent: 'center', alignItems: 'center', marginTop: hp(3) }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: wp('4%'), color: '#000000', }} numberOfLines={2}>By signing up, you agree with the </Text>
                         </View>
-                        <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', width: wp('80%') }}>
-                            <TouchableOpacity onPress={() => this.term()}>
-                                <Text style={{ color: '#C42D3E', fontSize: wp('4%'), textDecorationLine: 'underline', }}>Conditions</Text>
-                            </TouchableOpacity>
+                        <TouchableOpacity onPress={() => this.term()}>
+                            <Text style={{ color: '#C42D3E', fontSize: wp('4%'), textDecorationLine: 'underline', }}>Terms and Conditions</Text>
+                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={{ fontSize: wp('4%'), color: '#000000', }}> and </Text>
                             <TouchableOpacity onPress={() => this.privacy()}>
                                 <Text style={{ color: '#C42D3E', fontSize: wp('4%'), textDecorationLine: 'underline', }}>Privacy Policy.</Text>
@@ -134,7 +131,7 @@ class Signup extends React.Component {
 
                     {/*Buttons*/}
                     <View
-                        style={{ flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: hp(2) }}>
                         <View style={{ marginRight: wp('2%') }}>
 
                             <TouchableOpacity onPress={() => this.accept()} style={{
@@ -148,7 +145,6 @@ class Signup extends React.Component {
                         <View style={{ marginRight: wp('2%') }}>
                             <TouchableOpacity onPress={() => this.cancel()} style={{
                                 width: wp('36%'), height: hp('7%'),
-                                backgroundColor: 'white',
                                 justifyContent: 'center', alignItems: 'center',
                              }}>
                                 <Text style={{ color: '#E83528', fontWeight: 'bold', fontSize: wp('4%'), }}>CANCEL</Text>
@@ -193,7 +189,7 @@ class Signup extends React.Component {
                             autoCapitalize={'none'}
                             onChangeText={value => this.setState({ email: value, isValidEmail: this.validateEmail(value) })}
                         />
-                        <View style={{ marginVertical: wp(2), marginRight: wp(28) }}>
+                        <View style={{ marginVertical: wp(2), width: wp(80) }}>
                             <TickCircle img={isValidEmail ? images.ic_checked : images.ic_unchecked} title={'Valid email.'} />
                         </View>
                         <InputComponent
@@ -217,7 +213,7 @@ class Signup extends React.Component {
                                 isContainSpecial: this.hasSpecial(value)
                             })}
                         />
-                        <View style={{ marginVertical: hp(2) }}>
+                        <View style={{ marginVertical: wp(2), width: wp(80) }}>
                             <TickCircle img={isLeast6Char ? images.ic_checked : images.ic_unchecked} title={'At least 6 characters long'} />
                             <TickCircle img={isContainLetter ? images.ic_checked : images.ic_unchecked} title={'Contains a letter.'} />
                             <TickCircle img={isContainNum ? images.ic_checked : images.ic_unchecked} title={'Contains a number.'} />
@@ -275,10 +271,8 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     btnView: {
-        marginTop: hp(26),
-
+        marginTop: hp(24),
     }
-
 });
 
 const mapDispatchToProps = (dispatch) => ({
