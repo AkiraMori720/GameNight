@@ -12,6 +12,7 @@ const images = {
     ic_apple: require('./images/ic_apple.png'),
     ic_add: require('./images/ic_add.png'),
     ic_back: require('./images/ic_back.png'),
+    ic_call: require('./images/ic_call.png'),
     ic_checked: require('./images/ic_checked.png'),
     ic_clicked: require('./images/ic_clicked.png'),
     ic_controller: require('./images/ic_controller.png'),

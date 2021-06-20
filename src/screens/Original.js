@@ -28,6 +28,7 @@ import Character from "../Component/Character";
 import RTCView from "react-native-webrtc/RTCView";
 import {rgbaColor} from "react-native-reanimated/src/reanimated2/Colors";
 import {showToast} from "../common/info";
+import {openCallApp} from "../common/call";
 
 export const peerConnectionConfig = {
     'iceServers': [
@@ -1247,6 +1248,10 @@ class Original extends React.Component {
         this.setState({ toggleMic: !toggleMic });
     }
 
+    toggleCallApp = async () => {
+        await openCallApp();
+    }
+
     renderRenigBook() {
         const { renigBook, renigId } = this.state
         return (
@@ -1555,6 +1560,9 @@ class Original extends React.Component {
                             }
                             <TouchableOpacity style={styles.touchRecorder} onPress={this.toggleMicrophone}>
                                 <Image style={styles.image} source={toggleMic?images.ic_recorder:images.ic_recorder_disable} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.touchRecorder} onPress={this.toggleCallApp}>
+                                <Image style={styles.image} source={images.ic_call} />
                             </TouchableOpacity>
                         </View>
 
