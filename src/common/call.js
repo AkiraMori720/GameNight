@@ -3,10 +3,9 @@ import { Linking, Platform } from 'react-native';
 const FACEBOOK_APP_URL = 'whatsapp://send';
 const FACEBOOK_MESSENGER_PLAY_STORE_ID = 'com.whatsapp';
 
-const FACETIME_APP_URL = '';
-const FACETIME_APP_STORE_ID = '';
-const FACETIME_APP_STORE_LOCAL = '';
-const FACETIME_APP_NAME = '';
+const FACETIME_APP_URL = 'facetime://gamenight';
+const FACETIME_APP_STORE_URL = 'itms-apps://itunes.apple.com/us/app/facetime/id1110145091?mt=8';
+const FACETIME_ITUNES_URL = 'https://itunes.apple.com/us/app/facetime/id1110145091?mt=8'
 
 export const openCallApp = async () => {
     let appLink = '';
@@ -16,9 +15,18 @@ export const openCallApp = async () => {
         appLink = FACEBOOK_APP_URL;
     }
     Linking.openURL(appLink).catch(err => {
+        console.log('supported', err);
         if (err.code === 'EUNSPECIFIED') {
             if (Platform.OS === 'ios') {
-                Linking.openURL(`https://apps.apple.com/${FACETIME_APP_STORE_LOCAL}/app/${FACETIME_APP_NAME}/id${FACETIME_APP_STORE_ID}`);
+                Linking.canOpenURL(FACETIME_APP_STORE_URL)
+                    .then(supported => {
+                        if(supported){
+                            Linking.openURL(FACETIME_APP_STORE_URL);
+                        } else {
+                            Linking.openURL(FACETIME_ITUNES_URL);
+                        }
+                    })
+                    .catch(e => console.log(e))
             } else {
                 Linking.openURL(
                     `https://play.google.com/store/apps/details?id=${FACEBOOK_MESSENGER_PLAY_STORE_ID}&hl=en_US&gl=US`
