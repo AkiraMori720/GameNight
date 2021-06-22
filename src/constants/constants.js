@@ -26,6 +26,7 @@ export const GENDER_MALE = 'male';
 export const GENDER_FEMALE = 'female';
 
 export const MALE_PROFILE_PROPS = {
+    skins: [{id:1, value:'#fed4a2', image:images.male_skin_1}, {id:2, value:'#f3b373', image:images.male_skin_2}, {id:3, value:'#9e6c43', image:images.male_skin_3}],
     hairs: [{id:1, value:images.male_hair_1}, {id:2, value:images.male_hair_2}, {id:3, value:images.male_hair_3}],
     eyerows: [{id:1, value:images.male_eyerows_1}, {id:2, value:images.male_eyerows_2}, {id:3, value:images.male_eyerows_3}],
     eyes: [{id:1, value:images.male_eyes_1}, {id:2, value:images.male_eyes_2}, {id:3, value:images.male_eyes_3}],
@@ -33,6 +34,7 @@ export const MALE_PROFILE_PROPS = {
     lips: [{id:1, value:images.male_lips_1}, {id:2, value:images.male_lips_2}, {id:3, value:images.male_lips_3}],
 }
 export const FEMALE_PROFILE_PROPS = {
+    skins: [{id:1, value:'#fed4a2', image:images.female_skin_1}, {id:2, value:'#f3b373', image:images.female_skin_2}, {id:3, value:'#9e6c43', image:images.female_skin_3}],
     hairs: [{id:1, value:images.female_hair_1}, {id:2, value:images.female_hair_2}, {id:3, value:images.female_hair_3}],
     eyerows: [{id:1, value:images.female_eyerows_1}, {id:2, value:images.female_eyerows_2}, {id:3, value:images.female_eyerows_3}],
     eyes: [{id:1, value:images.female_eyes_1}, {id:2, value:images.female_eyes_2}, {id:3, value:images.female_eyes_3}],

@@ -11,14 +11,15 @@ const styles = {
         alignItems: 'center'
     },
     maleSkin: {
-        left: '1%',
-        width: '100%',
-        height: '100%',
+        top: '5%',
+        width: '90%',
+        height: '90%',
         resizeMode: 'contain'
     },
     femaleSkin: {
-        width: '100%',
-        height: '100%',
+        top: '8%',
+        width: '90%',
+        height: '90%',
         resizeMode: 'contain'
     },
     hair_1: {
@@ -59,7 +60,7 @@ const styles = {
     nose: {
         position: 'absolute',
         top: '6%',
-        width: '12%',
+        width: '14%',
         height: '100%',
         resizeMode: 'contain'
     },
@@ -160,6 +161,8 @@ export default class Character extends React.Component {
     getPreviewImage = (gender, part, id) => {
         if(gender === GENDER_FEMALE){
             switch (part){
+                case ('skin'):
+                    return FEMALE_PROFILE_PROPS.skins.find(i => i.id === id).image;
                 case ('hair'):
                     return FEMALE_PROFILE_PROPS.hairs.find(i => i.id === id).value;
                 case ('eyerow'):
@@ -173,6 +176,8 @@ export default class Character extends React.Component {
             }
         } else {
             switch (part){
+                case ('skin'):
+                    return MALE_PROFILE_PROPS.skins.find(i => i.id === id).image;
                 case ('hair'):
                     return MALE_PROFILE_PROPS.hairs.find(i => i.id === id).value;
                 case ('eyerow'):
@@ -190,7 +195,7 @@ export default class Character extends React.Component {
 
     render(){
         const { width } = this.state;
-        const { gender, hair, eyerow, eye, nose, lip } = this.props;
+        const { gender, skin, hair, eyerow, eye, nose, lip } = this.props;
         let skinStyle = styles.maleSkin;
         let hairStyle = (hair === 1)?styles.hair_1:((hair===2)?styles.hair_2:styles.hair_3);
         let eyerowStyle = styles.eyerow;
@@ -215,7 +220,7 @@ export default class Character extends React.Component {
                     this.setState({ width: height });
                 }}
             >
-                <Image style={skinStyle} resizeMode={'contain'} resizeMethod={'resize'} source={gender === GENDER_FEMALE?images.female_skin:images.male_skin}/>
+                <Image style={skinStyle} source={this.getPreviewImage(gender, 'skin', skin)}/>
                 <Image style={eyerowStyle} source={this.getPreviewImage(gender, 'eyerow', eyerow)}/>
                 <Image style={eyeStyle} source={this.getPreviewImage(gender, 'eye', eye)}/>
                 <Image style={hairStyle} source={this.getPreviewImage(gender, 'hair', hair)}/>

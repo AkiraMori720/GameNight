@@ -24,6 +24,7 @@ class EditAvatar extends React.Component {
             lastName: profile?.lastName??'',
             location: profile?.location??'',
             gender: gender,
+            skin: profile?.skin??1,
             hair: profile?.hair??1,
             eyerow: profile?.eyerow??1,
             eye: profile?.eye??1,
@@ -41,7 +42,7 @@ class EditAvatar extends React.Component {
     }
 
     _onPressSave = () => {
-        const { id, firstName, lastName, location, gender, hair, eyerow, eye, nose, lip } = this.state;
+        const { id, firstName, lastName, location, gender, skin, hair, eyerow, eye, nose, lip } = this.state;
         const { auth, setUser } = this.props;
 
         const character = {
@@ -50,6 +51,7 @@ class EditAvatar extends React.Component {
             lastName,
             location,
             gender,
+            skin,
             hair,
             eyerow,
             eye,
@@ -107,10 +109,9 @@ class EditAvatar extends React.Component {
     }
 
     render() {
-        const { gender, hair, eyerow, eye, nose, lip, loading } = this.state
+        const { gender, hair, skin, eyerow, eye, nose, lip, loading } = this.state
         // const { skinColor, accessory, nailColor, handTattoo, spadezDeck, spadezTable } = this.props.auth
-        const character = { gender, hair, eyerow, eye, nose, lip};
-        console.log(character);
+
         const profileProps = (gender === GENDER_FEMALE)?FEMALE_PROFILE_PROPS:MALE_PROFILE_PROPS;
 
         return (
@@ -138,6 +139,7 @@ class EditAvatar extends React.Component {
                             }}>
                                 <Character
                                     gender={gender}
+                                    skin={skin}
                                     hair={hair}
                                     eyerow={eyerow}
                                     eye={eye}
@@ -147,6 +149,28 @@ class EditAvatar extends React.Component {
                             </View>
                         </View>
                         <View style={styles.contentContainer}>
+                            <View style={styles.textView}>
+                                <Text style={styles.text}>SKIN</Text>
+                            </View>
+                            <View style={styles.typeView}>
+                                <View style={styles.typeInnerView}>
+                                    {
+                                        profileProps.skins.map((item, i) => {
+                                            const btnStyle = this.getBtnStyle(i, profileProps.skins.length)
+                                            const backgroundColor = item.id === skin ? 'red' : '#460000'
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    onPress={() => this.setState({skin: item.id})}
+                                                    style={[btnStyle, { backgroundColor: backgroundColor }]}
+                                                >
+                                                    <View style={[styles.colorBtn, {backgroundColor: item.value}]}/>
+                                                </TouchableOpacity>
+                                            )
+                                        })
+                                    }
+                                </View>
+                            </View>
                             <View style={styles.textView}>
                                 <Text style={styles.text}>HAIR</Text>
                             </View>
@@ -359,6 +383,11 @@ const styles = StyleSheet.create({
         // backgroundColor:'gold',
         justifyContent: 'flex-start',
         marginTop: hp(6),
+    },
+    colorBtn: {
+        width: '60%',
+        height: '60%',
+        borderRadius: 12
     }
 });
 

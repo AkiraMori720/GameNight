@@ -1405,10 +1405,10 @@ class Original extends React.Component {
                                 <Text style={styles.text}>POINTS</Text>
                                 <View style={{ flexDirection:'row'}}>
                                     <Text style={styles.boldtext}>{this.state.myScore} </Text>
-                                    <Text style={styles.text}>Points</Text>    
+                                    <Text style={styles.text}>Points</Text>
                                 </View>
-                                
-                                
+
+
                             </View>
                         </View>
                         <View style={{ alignItems: 'center' }}>
@@ -1450,15 +1450,15 @@ class Original extends React.Component {
                                 {game.players && game.players.map((player, i) => {
                                     return (
                                         <View key={i}>
-                                            {player.cards && player.cards.map((card, j) => {                                            
+                                            {player.cards && player.cards.map((card, j) => {
                                                 return (
                                                     <View key={j}>
-                                                        {player.playerPosition === this.state.myPosition && curPlayerId === this.state.myPosition ?                                                      
+                                                        {player.playerPosition === this.state.myPosition && curPlayerId === this.state.myPosition ?
                                                             <TouchableOpacity style={[{ flex: 1,
                                                                 position: 'absolute',
                                                                 width: 115 / 2,
                                                                 height: 162 / 2,
-                                                                zIndex: 100 + j                                                            
+                                                                zIndex: 100 + j
                                                             }, card.style ]}
                                                                 onPress={() => this.playerChoosePlayCard(i, j)} >
                                                                 <Image
@@ -1468,18 +1468,18 @@ class Original extends React.Component {
                                                                     }}
                                                                     source={card.isFlippedUp ? cards[card.image].image : this.getSpadezDeck()} />
                                                             </TouchableOpacity>
-                                                            :                                                        
+                                                            :
                                                             <Image
                                                                 style={[{
                                                                     position: 'absolute',
                                                                     width: 115 / 2,
                                                                     height: 162 / 2,
-                                                                    zIndex: 100 + j                                                                
+                                                                    zIndex: 100 + j
                                                                 }, card.style]}
                                                                 source={card.isFlippedUp ? cards[card.image].image : this.getSpadezDeck()} />
                                                         }
                                                     </View>
-                                                )                                            
+                                                )
                                             })}
                                         </View>
                                     )
@@ -1511,6 +1511,7 @@ class Original extends React.Component {
                                                             }}>
                                                             <Character
                                                                 gender={player.config.character.gender}
+                                                                skin={player.config.character.skin}
                                                                 hair={player.config.character.hair}
                                                                 eyerow={player.config.character.eyerow}
                                                                 eye={player.config.character.eye}
@@ -1540,23 +1541,23 @@ class Original extends React.Component {
                         </View>
 
                         <View style={styles.btnView}>
-                            <SimpleButton                        
+                            <SimpleButton
                                 onPress={this.findRenig}
-                                btnWidth={wp(40)}   
-                                btnHeight={hp(5)}                                                        
+                                btnWidth={wp(40)}
+                                btnHeight={hp(5)}
                                 textColor={'#000000'}
                                 fontSize={wp(5)}
-                                title={'RENIG'}                                           
+                                title={'RENIG'}
                             />
                             {this.state.showBlindBid &&
-                                <SimpleButton                        
+                                <SimpleButton
                                     onPress={this.setBlindBid}
-                                    btnWidth={wp(40)}    
-                                    btnHeight={hp(5)}                           
+                                    btnWidth={wp(40)}
+                                    btnHeight={hp(5)}
                                     textColor={'#000000'}
                                     fontSize={wp(5)}
-                                    title={'Blind'}  
-                                />                                         
+                                    title={'Blind'}
+                                />
                             }
                             <TouchableOpacity style={styles.touchRecorder} onPress={this.toggleMicrophone}>
                                 <Image style={styles.image} source={toggleMic?images.ic_recorder:images.ic_recorder_disable} />
@@ -1597,7 +1598,7 @@ class Original extends React.Component {
                         >
                             {this.renderRenigBook()}
                         </Modal>
-                    </ImageBackground>            
+                    </ImageBackground>
                 </View>
             </SafeAreaView>
         );
@@ -1674,7 +1675,7 @@ const styles = StyleSheet.create({
         color: '#f9ba37',
         fontFamily: 'Montserrat-Bold',
     },
-    
+
     text: {
         fontSize: wp(4.5),
         fontWeight:'bold',
