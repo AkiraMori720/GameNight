@@ -133,7 +133,13 @@ class firebaseServices {
 
                 let player = game.players[data.playerId];
                 let card = player.cards[data.cardId];
+
+                console.log('card', card, game);
                 if (card.suit === 'S') {
+                    // First card can not be Spade Card
+                    if(game.turnIndex === 0){
+                        return;
+                    }
                     game.isSpadesBroken = true;
                 }
 
@@ -141,8 +147,8 @@ class firebaseServices {
                     var leadCard = game.trickCards[0];
                     if (card.suit !== leadCard.suit) {
                         //modify to Prevent to place the card in another suit  when exist the card in same kind suit
-                        if(player.cards.findIndex(obj => obj.suit === leadCard.suit) > -1) return;  
-                              
+                        if(player.cards.findIndex(obj => obj.suit === leadCard.suit) > -1) return;
+
                         player.isShownVoidInSuit[leadCard.suitInt] = true;
                     }
                 }
@@ -155,7 +161,7 @@ class firebaseServices {
                 if ((game.turnIndex % 4) === 0) {
                     game.currentMoveStage = 'trickFinished';
                     this.updateGame(data.roomid, game, (res) => {
-                        if (res.isSuccess) {                            
+                        if (res.isSuccess) {
                             callback && callback(res)
                             game.currentMoveStage = 'trickResult';
                             this.evalutionTricks(game);
@@ -320,7 +326,7 @@ class firebaseServices {
 
         return topScore;
     }
-    // add 
+    // add
     addRoom = (room, callback = null) => {
         firestore()
             .collection('rooms')
@@ -349,7 +355,7 @@ class firebaseServices {
                 console.error(error)
             })
     }
-    
+
 
 
     createGame = (data, callback = null) => {
@@ -721,7 +727,7 @@ class firebaseServices {
                     game.turnIndex = 0;
                     game.currentMoveStage = 'ChoosingTrickCard';
                 }
-                
+
                 // this.sendToAll('updatedGame', this.game);
                 this.updateGame(data.roomid, game, callback)
             })

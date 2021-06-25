@@ -29,6 +29,7 @@ import RTCView from "react-native-webrtc/RTCView";
 import {rgbaColor} from "react-native-reanimated/src/reanimated2/Colors";
 import {showToast} from "../common/info";
 import {openCallApp} from "../common/call";
+import Hand from "../Component/Hand";
 
 export const peerConnectionConfig = {
     'iceServers': [
@@ -51,6 +52,7 @@ const POS_EAST = 3;
 
 const CHARACTER_WIDTH = 64;
 const CHARACTER_HEIGHT = 64;
+const DISABLE_AUDIO = true;
 
 class Original extends React.Component {
 
@@ -59,6 +61,7 @@ class Original extends React.Component {
         this.localStream = null;
         this.connectionUnSubscribe = {};
         this.connectionCandidateUnSubscribe = {};
+        this.handAnimate = new Animated.ValueXY({ x: -400, y: -400 });
         this.state = {
             game: {},
             players: [],
@@ -69,6 +72,7 @@ class Original extends React.Component {
             avaiableBid: [],
             selectedBid: -1,
             selectedBook: -1,
+            leadIndex: 0,
             myPosition: -1,
             myScore: 0,
             teamId: -1,
@@ -147,7 +151,7 @@ class Original extends React.Component {
         const auth = this.props.auth
         const { roomid, fPrivate } = this.state
         console.log('roomid, fPrivate', roomid, fPrivate, preference, auth);
-        this.trickAnimate = []
+        this.trickAnimate = [];
 
         if (roomid !== undefined && roomid !== null) {
             const { characterSelectedId, characters, skinColor, accessory, nailColor, spadezDeck, spadezTable } = this.props.auth;
@@ -732,7 +736,7 @@ class Original extends React.Component {
                 }
             }
 
-            if(room && room.game){
+            if(room && room.game && !DISABLE_AUDIO){
                 const userId = this.props.auth.userid;
                 const availableConnectionIds = [];
                 for (let index = 0; index < room.game.players.length; index++) {
@@ -1051,7 +1055,7 @@ class Original extends React.Component {
     }
 
     animateTrickCards = (game) => {
-        this.trickAnimate = []
+        this.trickAnimate = [];
         for (let i = 0; i < game.trickCards.length; i++) {
             const playerPosition = (game.leadIndex + i) % 4
             let loc = this.getTrickDiscardLocation(playerPosition);
@@ -1088,11 +1092,11 @@ class Original extends React.Component {
         const position = this.getPosition(playerPosition)
         switch (position) {
             case POS_SOUTH:
-                return [loc[0], Dimensions.get('screen').height + 150];
+                return [loc[0], Dimensions.get('screen').height + 250];
             case POS_WEST:
                 return [-150, loc[1]];
             case POS_NORTH:
-                return [loc[0], -150];
+                return [loc[0], -250];
             default:
                 return [Dimensions.get('screen').width + 150, loc[1]];
         }
@@ -1100,23 +1104,50 @@ class Original extends React.Component {
 
     animateTrickResult = (game) => {
         const leadIndex = game.leadIndex
+        let loc = this.getWonTrickCardsPilePostion(leadIndex);
         for (let i = 0; i < game.trickCards.length; i++) {
-            let loc = this.getWonTrickCardsPilePostion(leadIndex);
             Animated.parallel([
                 Animated.timing(this.trickAnimate[i].x, {
                     toValue: loc[0],
                     useNativeDriver: false,
-                    duration: 500,
+                    duration: 1000,
                     easing: Easing.linear
                 }),
                 Animated.timing(this.trickAnimate[i].y, {
                     toValue: loc[1],
                     useNativeDriver: false,
-                    duration: 500,
+                    duration: 1000,
+                    easing: Easing.linear
+                }),
+            ]).start()
+        }
+
+        // Hand Animation
+        let handStartIndex = this.getPosition(leadIndex);
+        console.log('hand animation', this.handAnimate);
+        let targetIndex = (leadIndex + 2) % 4;
+        this.handAnimate = new Animated.ValueXY({
+            x: this.trickAnimate[targetIndex].x,
+            y: this.trickAnimate[targetIndex].y});
+
+        console.log('hand animation', handStartIndex, this.handAnimate, loc);
+
+        this.setState(prevState => ({leadIndex}), () => {
+            Animated.parallel([
+                Animated.timing(this.handAnimate.x, {
+                    toValue: loc[0],
+                    useNativeDriver: false,
+                    duration: 1000,
+                    easing: Easing.linear
+                }),
+                Animated.timing(this.handAnimate.y, {
+                    toValue: loc[1],
+                    useNativeDriver: false,
+                    duration: 1000,
                     easing: Easing.linear
                 })
             ]).start()
-        }
+        })
     }
 
     flipUpCard(card) {
@@ -1388,7 +1419,7 @@ class Original extends React.Component {
     }
 
     render() {
-        const { game, renigBook, players, toggleMic, loading, teamId } = this.state
+        const { game, renigBook, leadIndex, players, toggleMic, loading, teamId } = this.state
         const curPlayerId = (game.turnIndex + game.leadIndex) % 4;
         return (
             <SafeAreaView style={{ flex: 1 }}>
@@ -1447,6 +1478,28 @@ class Original extends React.Component {
                                             source={cards[card.image].image} />
                                     )
                                 })}
+
+                                <Animated.View
+                                    style={{
+                                        position: 'absolute',
+                                        width: 120,
+                                        height: 120,
+                                        left: this.handAnimate.x,
+                                        top: this.handAnimate.y,
+                                        zIndex: 1000,
+                                        transform: [{ rotate: (90 * this.getPosition(leadIndex)) + 'deg' }]
+                                    }}
+                                >
+                                    {
+                                        players[leadIndex] &&
+                                        <Hand
+                                            accessory={players[leadIndex].config.accessory}
+                                            skinColor={players[leadIndex].config.skinColor}
+                                            nailColor={players[leadIndex].config.nailColor}
+                                        />
+                                    }
+                                </Animated.View>
+
                                 {game.players && game.players.map((player, i) => {
                                     return (
                                         <View key={i}>
