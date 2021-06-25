@@ -120,6 +120,7 @@ class LeaderBoard extends React.Component {
                 imgLeft={
                     <Character
                         gender={item.character.gender}
+                        skin={item.character.skin}
                         hair={item.character.hair}
                         eyerow={item.character.eyerow}
                         eye={item.character.eye}
