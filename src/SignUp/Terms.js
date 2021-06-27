@@ -14,16 +14,19 @@ export default class Terms extends React.Component {
         this.state = {
         }
     }
-    
+
     render() {
         return(
             <SafeAreaView style={{flex:1}}>
             <View style={styles.mainContainer}>
-                <Header onPress={() => this.props.navigation.goBack()} bgColor={'#250901'} headerBorderWidth={2}   imgLeft={images.ic_back} title={'TERMS & CONDITIONS'} />
+                <Header onPress={() => {
+                    this.props.navigation.goBack();
+                    this.props.route.params?.openModal && this.props.route.params.openModal();
+                }} bgColor={'#250901'} headerBorderWidth={2}   imgLeft={images.ic_back} title={'TERMS & CONDITIONS'} />
                 <ScrollView style={styles.termsContainer}>
                     <Text style={styles.tagTxt0}>[GameNight Spadez]{'\n'}</Text>
-                    <Text style={styles.tagTxt2}>PLEASE READ THESE TERMS AND CONDITIONS CAREFULLY{'\n'}</Text>        
-                    
+                    <Text style={styles.tagTxt2}>PLEASE READ THESE TERMS AND CONDITIONS CAREFULLY{'\n'}</Text>
+
                         <Text style={styles.tagTxt1}>
                             AGREEMENT TO TERMS
                         </Text>
@@ -414,7 +417,7 @@ export default class Terms extends React.Component {
                 App.{'\n'}{'\n'}
                         </Text>
                         <Text style={styles.tagTxt1}>
-                        PRIVACY POLICY  
+                        PRIVACY POLICY
                         </Text>
                         <Text style={styles.txt}>
                         We care about data privacy and security. Please review our Privacy Policy on our the application. By
@@ -728,10 +731,10 @@ export default class Terms extends React.Component {
                         In order to resolve a complaint regarding the App or to receive further information regarding use of the
                 App, please contact us at:{'\n'}{'\n'}
                 [GameNightSpadez]{'\n'}
-                
+
                 [GameNightSpadez@gmail.com]{'\n'}{'\n'}{'\n'}
             </Text>
-      </ScrollView>      
+      </ScrollView>
 
             </View>
             </SafeAreaView>
@@ -766,21 +769,21 @@ const styles= StyleSheet.create({
         alignSelf: 'center',
         marginTop: normalize(15, 'height'),
         marginBottom: normalize(15, 'height'),
-        padding: normalize(10),    
+        padding: normalize(10),
         borderRadius: normalize(7),
       },
-    
+
       tagTxt0: {
         fontSize: RFPercentage(3),
         color: '#FFFFFF',
         textAlign: 'center',
         fontWeight: 'bold'
-      },  
+      },
 
       tagTxt1: {
         fontSize: RFPercentage(3),
         color: '#FFFFFF',
-      },  
+      },
 
       tagTxt2: {
         fontSize: RFPercentage(2),
@@ -792,7 +795,7 @@ const styles= StyleSheet.create({
         fontSize: RFPercentage(2),
         color: '#FFFFFF',
       },
-    
+
 
 });
 

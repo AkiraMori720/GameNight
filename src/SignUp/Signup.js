@@ -50,13 +50,17 @@ class Signup extends React.Component {
     }
 
     term() {
-        this.setState({ showAlert: !this.state.showAlert });
-        this.props.navigation.navigate('Terms')
+        this.setState({ showAlert: false });
+        this.props.navigation.navigate('Terms', { openModal: () => {
+                this.setState({ showAlert: true });
+            }})
     }
 
     privacy() {
-        this.setState({ showAlert: !this.state.showAlert });
-        this.props.navigation.navigate('Privacy')
+        this.setState({ showAlert: false });
+        this.props.navigation.navigate('Privacy', { openModal: () => {
+                this.setState({ showAlert: true });
+            }})
     }
 
     togglePrivacyAlertModal = () => {

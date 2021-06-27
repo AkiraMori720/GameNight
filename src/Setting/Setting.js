@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, StyleSheet, FlatList} from 'react-native';
+import {View, StyleSheet, FlatList, Linking} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import SettingLink from './SettingLink';
 
@@ -64,10 +64,14 @@ class Setting extends React.Component {
             this.props.navigation.navigate('GamePreferences')
         }
         else if (id===2) {
-
+            try{
+                Linking.openURL("App-Prefs:root=Sounds");
+            }catch(e){}
         }
         else if (id===3) {
-
+            try{
+                Linking.openURL("App-Prefs:root=MUSIC");
+            }catch(e){}
         }
         else if (id===4) {
             this.props.navigation.navigate('Terms')

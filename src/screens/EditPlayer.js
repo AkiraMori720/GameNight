@@ -52,6 +52,7 @@ class EditPlayer extends React.Component {
         apiService.updateProfileForUser(auth.user, profileData, (res) => {
             if (res.isSuccess) {
                 showToast('Profile is saved successfully!');
+                navigation.pop();
             } else {
                 showToast('Saving Profile Failed!');
             }

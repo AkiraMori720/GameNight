@@ -45,10 +45,14 @@ export default class InputComponent extends React.Component {
                     onChangeText={this.props.onChangeText}
                     autoCapitalize={this.props.autoCapitalize??'sentences'}
                 />
-                <TouchableOpacity onPress={() => this.setState({ secureTextEntry: !secureTextEntry })}>
+                <TouchableOpacity onPress={() => {
+                    if (this.props.secureTextEntry) {
+                        this.setState({secureTextEntry: !secureTextEntry})
+                    }
+                }}>
                     <Image style={[styles.img,{height:iconHeightRight},{width: iconWidthRight}]} source={this.props.imgRight} />
                 </TouchableOpacity>
-                
+
             </View>
 
 

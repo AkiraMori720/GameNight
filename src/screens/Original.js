@@ -52,7 +52,7 @@ const POS_EAST = 3;
 
 const CHARACTER_WIDTH = 64;
 const CHARACTER_HEIGHT = 64;
-const DISABLE_AUDIO = true;
+const DISABLE_AUDIO = false;
 
 class Original extends React.Component {
 

@@ -60,7 +60,13 @@ class Login extends React.Component {
             })
         }
         else {
-            showToast('The email and password is invalid!');
+            if(email.length === 0){
+                showToast('Please enter email');
+            } else if(password.length === 0) {
+                showToast('Please enter password');
+            } else {
+                showToast('The email and password is invalid!');
+            }
             this.setState({loading: false});
         }
     }

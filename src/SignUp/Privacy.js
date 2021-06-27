@@ -20,23 +20,26 @@ export default class Privacy extends React.Component {
         return(
             <SafeAreaView style={{flex:1}}>
                 <View style={styles.mainContainer}>
-                    <Header onPress={() => this.props.navigation.goBack()} bgColor={'#250901'} headerBorderWidth={2}   imgLeft={images.ic_back} title={'PRIVACY POLICY'} />
- 
+                    <Header onPress={() => {
+                            this.props.navigation.goBack();
+                            this.props.route.params?.openModal && this.props.route.params.openModal();
+                    }} bgColor={'#250901'} headerBorderWidth={2}   imgLeft={images.ic_back} title={'PRIVACY POLICY'} />
+
                     <ScrollView style={styles.policyContainer}>
                         <Text style={styles.tagTxt0}>[GameNight Spadez]{'\n'}</Text>
                         <Text style={styles.txt}>
-                        [GameNight Spadez] (“we” or “us” or “our”) respects the privacy of our users (“user” or “you”). 
-                        This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our mobile application (the “Application”).   
-                        Please read this Privacy Policy carefully.  IF YOU DO NOT AGREE WITH THE TERMS OF THIS PRIVACY POLICY, PLEASE DO NOT ACCESS THE APPLICATION. 
+                        [GameNight Spadez] (“we” or “us” or “our”) respects the privacy of our users (“user” or “you”).
+                        This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our mobile application (the “Application”).
+                        Please read this Privacy Policy carefully.  IF YOU DO NOT AGREE WITH THE TERMS OF THIS PRIVACY POLICY, PLEASE DO NOT ACCESS THE APPLICATION.
                         {'\n'}{'\n'}
-                        We reserve the right to make changes to this Privacy Policy at any time and for any reason.  
-                        We will alert you about any changes by updating the “Last updated” date of this Privacy Policy.  
-                        You are encouraged to periodically review this Privacy Policy to stay informed of updates. 
-                        You will be deemed to have been made aware of, will be subject to, and will be deemed to have 
-                        accepted the changes in any revised Privacy Policy by your continued use of the Application after the date such revised Privacy Policy is posted. 
+                        We reserve the right to make changes to this Privacy Policy at any time and for any reason.
+                        We will alert you about any changes by updating the “Last updated” date of this Privacy Policy.
+                        You are encouraged to periodically review this Privacy Policy to stay informed of updates.
+                        You will be deemed to have been made aware of, will be subject to, and will be deemed to have
+                        accepted the changes in any revised Privacy Policy by your continued use of the Application after the date such revised Privacy Policy is posted.
                         {'\n'}{'\n'}
-                        This Privacy Policy does not apply to the third-party online/mobile store from which you install the Application or make payments, 
-                        including any in-game virtual items, which may also collect and use data about you.  
+                        This Privacy Policy does not apply to the third-party online/mobile store from which you install the Application or make payments,
+                        including any in-game virtual items, which may also collect and use data about you.
                         We are not responsible for any of the data collected by any such third party.{'\n'}{'\n'}
                         </Text>
                         <Text style={styles.tagTxt1}>
@@ -143,7 +146,7 @@ export default class Privacy extends React.Component {
                 account to the third party and grant the Application permission to access this information.{'\n'}
                         </Text>
                         <Text style={styles.tagTxt2}>
-                        Data From Contests, Giveaways, and Surveys  
+                        Data From Contests, Giveaways, and Surveys
                         </Text>
                         <Text style={styles.txt}>
                         Personal and other information you may provide when entering contests or giveaways and/or responding
@@ -151,7 +154,7 @@ export default class Privacy extends React.Component {
                         </Text>
 
                         <Text style={styles.tagTxt1}>
-                        USE OF YOUR INFORMATION  
+                        USE OF YOUR INFORMATION
                         </Text>
                         <Text style={styles.txt}>
                 Having accurate information about you permits us to provide you with a smooth, efficient, and
@@ -182,7 +185,7 @@ export default class Privacy extends React.Component {
                 22. [Other]{'\n'}{'\n'}
                         </Text>
                         <Text style={styles.tagTxt1}>
-                        DISCLOSURE OF YOUR INFORMATION 
+                        DISCLOSURE OF YOUR INFORMATION
                         </Text>
                         <Text style={styles.txt}>
                         We may share information we have collected about you in certain situations. Your information may be
@@ -422,21 +425,21 @@ const styles= StyleSheet.create({
         alignSelf: 'center',
         marginTop: normalize(15, 'height'),
         marginBottom: normalize(15, 'height'),
-        padding: normalize(10),    
+        padding: normalize(10),
         borderRadius: normalize(7),
       },
-    
+
       tagTxt0: {
         fontSize: RFPercentage(3),
         color: '#FFFFFF',
         textAlign: 'center',
         fontWeight: 'bold'
-      },  
+      },
 
       tagTxt1: {
         fontSize: RFPercentage(3),
         color: '#FFFFFF',
-      },  
+      },
 
       tagTxt2: {
         fontSize: RFPercentage(2),
