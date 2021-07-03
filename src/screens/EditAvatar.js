@@ -24,6 +24,7 @@ class EditAvatar extends React.Component {
             lastName: profile?.lastName??'',
             location: profile?.location??'',
             gender: gender,
+            shape: profile.shape??1,
             skin: profile?.skin??1,
             hair: profile?.hair??1,
             eyerow: profile?.eyerow??1,
@@ -42,7 +43,7 @@ class EditAvatar extends React.Component {
     }
 
     _onPressSave = () => {
-        const { id, firstName, lastName, location, gender, skin, hair, eyerow, eye, nose, lip } = this.state;
+        const { id, firstName, lastName, location, gender, shape, skin, hair, eyerow, eye, nose, lip } = this.state;
         const { auth, setUser } = this.props;
 
         const character = {
@@ -51,6 +52,7 @@ class EditAvatar extends React.Component {
             lastName,
             location,
             gender,
+            shape,
             skin,
             hair,
             eyerow,
@@ -85,7 +87,7 @@ class EditAvatar extends React.Component {
         apiService.updateProfileForUser(auth.user, { characterSelectedId, characters }, (res) => {
             if (res.isSuccess) {
                 let user = Object.assign({}, res.response);
-
+                setUser(user);
                 showToast('Profile is saved Successfully');
                 this.props.navigation.navigate('UserProfile');
             } else {
@@ -109,8 +111,7 @@ class EditAvatar extends React.Component {
     }
 
     render() {
-        const { gender, hair, skin, eyerow, eye, nose, lip, loading } = this.state
-        // const { skinColor, accessory, nailColor, handTattoo, spadezDeck, spadezTable } = this.props.auth
+        const { gender, hair, shape, skin, eyerow, eye, nose, lip, loading } = this.state
 
         const profileProps = (gender === GENDER_FEMALE)?FEMALE_PROFILE_PROPS:MALE_PROFILE_PROPS;
 
@@ -139,6 +140,7 @@ class EditAvatar extends React.Component {
                             }}>
                                 <Character
                                     gender={gender}
+                                    shape={shape}
                                     skin={skin}
                                     hair={hair}
                                     eyerow={eyerow}
@@ -150,7 +152,29 @@ class EditAvatar extends React.Component {
                         </View>
                         <View style={styles.contentContainer}>
                             <View style={styles.textView}>
-                                <Text style={styles.text}>SKIN</Text>
+                                <Text style={styles.text}>FACE SHAPE</Text>
+                            </View>
+                            <View style={styles.typeView}>
+                                <View style={styles.typeInnerView}>
+                                    {
+                                        profileProps.shapes.map((item, i) => {
+                                            const btnStyle = this.getBtnStyle(i, profileProps.skins.length)
+                                            const backgroundColor = item.id === shape ? 'red' : '#460000'
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    onPress={() => this.setState({shape: item.id})}
+                                                    style={[btnStyle, { backgroundColor: backgroundColor }]}
+                                                >
+                                                    <Text style={styles.textBtn}>{item.value}</Text>
+                                                </TouchableOpacity>
+                                            )
+                                        })
+                                    }
+                                </View>
+                            </View>
+                            <View style={styles.textView}>
+                                <Text style={styles.text}>SKIN COLOR</Text>
                             </View>
                             <View style={styles.typeView}>
                                 <View style={styles.typeInnerView}>

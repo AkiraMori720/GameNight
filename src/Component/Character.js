@@ -12,8 +12,8 @@ const styles = {
     },
     maleSkin: {
         top: '5%',
-        width: '90%',
-        height: '90%',
+        width: '88%',
+        height: '88%',
         resizeMode: 'contain'
     },
     femaleSkin: {
@@ -57,10 +57,24 @@ const styles = {
         height: '100%',
         resizeMode: 'contain'
     },
-    nose: {
+    nose_1: {
+        position: 'absolute',
+        top: '6%',
+        width: '18%',
+        height: '100%',
+        resizeMode: 'contain'
+    },
+    nose_2: {
         position: 'absolute',
         top: '6%',
         width: '14%',
+        height: '100%',
+        resizeMode: 'contain'
+    },
+    nose_3: {
+        position: 'absolute',
+        top: '6%',
+        width: '16%',
         height: '100%',
         resizeMode: 'contain'
     },
@@ -109,7 +123,7 @@ const styles = {
     femaleNose_1: {
         position: 'absolute',
         top: '10%',
-        width: '14%',
+        width: '18%',
         height: '100%',
         resizeMode: 'contain'
     },
@@ -123,7 +137,7 @@ const styles = {
     femaleNose_3: {
         position: 'absolute',
         top: '10%',
-        width: '12%',
+        width: '16%',
         height: '100%',
         resizeMode: 'contain'
     },
@@ -162,7 +176,8 @@ export default class Character extends React.Component {
         if(gender === GENDER_FEMALE){
             switch (part){
                 case ('skin'):
-                    return FEMALE_PROFILE_PROPS.skins.find(i => i.id === id).image;
+                    const image_key = this.props.gender + '_' + (FEMALE_PROFILE_PROPS.skins.find(i => i.id === id).image) + '_' + (this.props.shape??"1");
+                    return images[image_key];
                 case ('hair'):
                     return FEMALE_PROFILE_PROPS.hairs.find(i => i.id === id).value;
                 case ('eyerow'):
@@ -177,7 +192,8 @@ export default class Character extends React.Component {
         } else {
             switch (part){
                 case ('skin'):
-                    return MALE_PROFILE_PROPS.skins.find(i => i.id === id).image;
+                    const image_key = this.props.gender + '_' + (FEMALE_PROFILE_PROPS.skins.find(i => i.id === id).image) + '_' + (this.props.shape??"1");
+                    return images[image_key];
                 case ('hair'):
                     return MALE_PROFILE_PROPS.hairs.find(i => i.id === id).value;
                 case ('eyerow'):
@@ -200,7 +216,7 @@ export default class Character extends React.Component {
         let hairStyle = (hair === 1)?styles.hair_1:((hair===2)?styles.hair_2:styles.hair_3);
         let eyerowStyle = styles.eyerow;
         let eyeStyle = styles.eye;
-        let noseStyle = styles.nose;
+        let noseStyle = (nose === 1)?styles.nose_1:((nose===2)?styles.nose_2:styles.nose_3);
         let lipStyle = styles.lip;
         if(gender===GENDER_FEMALE){
             skinStyle = styles.femaleSkin;

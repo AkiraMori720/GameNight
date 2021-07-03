@@ -153,6 +153,7 @@ class UserProfile extends React.Component {
                             <View style={styles.img}>
                                 {character && <Character
                                     gender={character.gender}
+                                    shape={character.shape}
                                     skin={character.skin}
                                     hair={character.hair}
                                     eyerow={character.eyerow}
@@ -210,6 +211,7 @@ class UserProfile extends React.Component {
                                                     <View style={styles.selectImg}>
                                                         <Character
                                                             gender={c.gender}
+                                                            shape={c.shape}
                                                             skin={c.skin}
                                                             hair={c.hair}
                                                             eyerow={c.eyerow}

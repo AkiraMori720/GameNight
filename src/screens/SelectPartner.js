@@ -226,6 +226,7 @@ class SpadezCrew extends React.Component {
                 imgLeft={
                     <Character
                         gender={item.character.gender}
+                        shape={item.character.shape}
                         skin={item.character.skin}
                         hair={item.character.hair}
                         eyerow={item.character.eyerow}

@@ -1564,6 +1564,7 @@ class Original extends React.Component {
                                                             }}>
                                                             <Character
                                                                 gender={player.config.character.gender}
+                                                                shape={player.config.character.shape}
                                                                 skin={player.config.character.skin}
                                                                 hair={player.config.character.hair}
                                                                 eyerow={player.config.character.eyerow}
