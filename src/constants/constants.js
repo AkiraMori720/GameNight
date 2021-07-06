@@ -44,7 +44,7 @@ export const FEMALE_PROFILE_PROPS = {
     lips: [{id:1, value:images.female_lips_1}, {id:2, value:images.female_lips_2}, {id:3, value:images.female_lips_3}],
 }
 export const PLAYER_PROPS = {
-    skinColors: [{id:1, value:'#fed4a2', image: images.hand_skin_1}, {id:2, value:'#f3b373', image: images.hand_skin_2}, {id:3, value:'#9e6c43', image: images.hand_skin_3}],
+    skinColors: [{id:1, value:'#ead2b9', image: images.hand_skin_1}, {id:2, value:'#4d3418', image: images.hand_skin_2}, {id:3, value:'#22160b', image: images.hand_skin_3}],
     nailColors: [{id:1, value:'#eaebeb', image: images.hand_nail_1}, {id:2, value:'#f83636', image: images.hand_nail_2}, {id:3, value:'#6ca6ed', image: images.hand_nail_3}],
     accessories: [{id:'bracelet', value:'Bracelet', image: images.hand_accessory_bracelet}, {id:'watch', value:'Watch', image: images.hand_accessory_watch}, {id:'ring', value:'Ring', image: images.hand_accessory_ring}],
     spadezDecks: [{id:'red', value:images.card_back_red}, {id:'green', value:images.card_back_green}, {id:'blue', value:images.card_back_blue}],

@@ -4,7 +4,7 @@ import { PLAYER_PROPS } from "../constants/constants";
 
 const styles = {
     handContainer: {
-        height: '100%',
+        height: '80%',
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -16,15 +16,36 @@ const styles = {
     },
     nailStyle: {
         position: 'absolute',
-        width: '100%',
-        height: '100%',
+        width: '9%',
+        height: '9%',
+        top: '1.5%',
+        right: '37%',
         resizeMode: 'contain'
     },
-    accessoryStyle: {
-        width: '100%',
-        height: '100%',
+    accessoryStyle_1: {
+        position: 'absolute',
+        width: '30%',
+        height: '30%',
+        bottom: '6%',
+        right: '36%',
         resizeMode: 'contain'
-    }
+    },
+    accessoryStyle_2: {
+        position: 'absolute',
+        width: '32%',
+        height: '32%',
+        bottom: '4%',
+        right: '36%',
+        resizeMode: 'contain'
+    },
+    accessoryStyle_3: {
+        position: 'absolute',
+        width: '14%',
+        height: '14%',
+        top: '12%',
+        right: '48%',
+        resizeMode: 'contain'
+    },
 }
 
 export default class Hand extends React.Component {
@@ -50,10 +71,10 @@ export default class Hand extends React.Component {
     render(){
         const { width } = this.state;
         const { skinColor, nailColor, accessory } = this.props;
-        let accessoryStyle = styles.accessoryStyle;
+        let accessoryStyle = accessory==='bracelet'?styles.accessoryStyle_1:(accessory==='watch'?styles.accessoryStyle_2:styles.accessoryStyle_3);
         let skinStyle = styles.skinStyle;
         let nailStyle = styles.nailStyle;
-        console.log('hand', nailColor);
+
         return (
             <View
                 style={[styles.handContainer, { width: width }]}

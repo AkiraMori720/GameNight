@@ -923,8 +923,8 @@ class Original extends React.Component {
                 }
             default:
                 {
-                    let firstLeft = wp(80) * 0.5 - 110//70;
-                    let lastLeft = wp(80) * 0.5 + 110//Dimensions.get('screen').width - 100;
+                    let firstLeft = wp(80) * 0.5 - 40//70;
+                    let lastLeft = wp(80) * 0.5 + 40//Dimensions.get('screen').width - 100;
                     let firstTop = hp(54);
                     let lastTop = hp(54);
                     let handWidth = lastLeft - firstLeft;
@@ -934,12 +934,12 @@ class Original extends React.Component {
                     if (cardSpacing > maxSpacing) {
                         cardSpacing = maxSpacing;
                         curLeft = firstLeft + (handWidth - cardSpacing * (cardCount - 1)) * 0.5;
-                        firstTop = hp(54);
-                        lastTop = hp(54);
+                        firstTop = hp(52);
+                        lastTop = hp(52);
                     }
                     curLeft = curLeft + index * cardSpacing;
                     let percent = (curLeft - firstLeft) / handWidth;
-                    let radius = handWidth * 3;
+                    let radius = handWidth * 0.6;
                     let distanceFromCenter = handWidth * (0.5 - percent);
                     let curveHeight = Math.sqrt(radius * radius - distanceFromCenter * distanceFromCenter) - Math.sqrt(radius * radius - handWidth * 0.5 * handWidth * 0.5);
                     let curveRotation = Math.asin(-distanceFromCenter / radius) * 180 / Math.PI;
@@ -1479,26 +1479,26 @@ class Original extends React.Component {
                                     )
                                 })}
 
-                                <Animated.View
-                                    style={{
-                                        position: 'absolute',
-                                        width: 120,
-                                        height: 120,
-                                        left: this.handAnimate.x,
-                                        top: this.handAnimate.y,
-                                        zIndex: 1000,
-                                        transform: [{ rotate: (90 * this.getPosition(leadIndex)) + 'deg' }]
-                                    }}
-                                >
-                                    {
-                                        players[leadIndex] &&
-                                        <Hand
-                                            accessory={players[leadIndex].config.accessory}
-                                            skinColor={players[leadIndex].config.skinColor}
-                                            nailColor={players[leadIndex].config.nailColor}
-                                        />
-                                    }
-                                </Animated.View>
+                                {/*<Animated.View*/}
+                                {/*    style={{*/}
+                                {/*        position: 'absolute',*/}
+                                {/*        width: 120,*/}
+                                {/*        height: 120,*/}
+                                {/*        left: this.handAnimate.x,*/}
+                                {/*        top: this.handAnimate.y,*/}
+                                {/*        zIndex: 1000,*/}
+                                {/*        transform: [{ rotate: (90 * this.getPosition(leadIndex)) + 'deg' }]*/}
+                                {/*    }}*/}
+                                {/*>*/}
+                                {/*    {*/}
+                                {/*        players[leadIndex] &&*/}
+                                {/*        <Hand*/}
+                                {/*            accessory={players[leadIndex].config.accessory}*/}
+                                {/*            skinColor={players[leadIndex].config.skinColor}*/}
+                                {/*            nailColor={players[leadIndex].config.nailColor}*/}
+                                {/*        />*/}
+                                {/*    }*/}
+                                {/*</Animated.View>*/}
 
                                 {game.players && game.players.map((player, i) => {
                                     return (
@@ -1534,6 +1534,24 @@ class Original extends React.Component {
                                                     </View>
                                                 )
                                             })}
+                                            {(player.cards && player.cards.length > 0 && player.playerPosition === this.state.myPosition)?
+                                                <View
+                                                    style={{
+                                                        position: 'absolute',
+                                                        width: 115 / 2,
+                                                        height: 162 / 2,
+                                                        zIndex: 150,
+                                                        left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5 - 18,
+                                                        top: hp(54)
+                                                    }}
+                                                >
+                                                    <Hand
+                                                        accessory={player.config.accessory}
+                                                        skinColor={player.config.skinColor}
+                                                        nailColor={player.config.nailColor}
+                                                    />
+                                                </View>:null
+                                            }
                                         </View>
                                     )
                                 })}
