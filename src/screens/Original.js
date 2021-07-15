@@ -52,7 +52,7 @@ const POS_EAST = 3;
 
 const CHARACTER_WIDTH = 64;
 const CHARACTER_HEIGHT = 64;
-const DISABLE_AUDIO = false;
+const DISABLE_AUDIO = true;
 
 class Original extends React.Component {
 
@@ -923,10 +923,10 @@ class Original extends React.Component {
                 }
             default:
                 {
-                    let firstLeft = wp(80) * 0.5 - 40//70;
-                    let lastLeft = wp(80) * 0.5 + 40//Dimensions.get('screen').width - 100;
-                    let firstTop = hp(54);
-                    let lastTop = hp(54);
+                    let firstLeft = wp(80) * 0.5 - 20//70;
+                    let lastLeft = wp(80) * 0.5 + 20//Dimensions.get('screen').width - 100;
+                    let firstTop = hp(52);
+                    let lastTop = hp(52);
                     let handWidth = lastLeft - firstLeft;
                     let cardSpacing = handWidth / (cardCount - 1);
                     let curLeft = firstLeft;
@@ -1538,10 +1538,10 @@ class Original extends React.Component {
                                                 <View
                                                     style={{
                                                         position: 'absolute',
-                                                        width: 115 / 2,
-                                                        height: 162 / 2,
+                                                        width: 132 / 2,
+                                                        height: 192 / 2,
                                                         zIndex: 150,
-                                                        left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5 - 18,
+                                                        left: wp(80) * 0.5 - CHARACTER_WIDTH * 0.5 - 32,
                                                         top: hp(54)
                                                     }}
                                                 >
@@ -1549,6 +1549,7 @@ class Original extends React.Component {
                                                         accessory={player.config.accessory}
                                                         skinColor={player.config.skinColor}
                                                         nailColor={player.config.nailColor}
+                                                        real={true}
                                                     />
                                                 </View>:null
                                             }

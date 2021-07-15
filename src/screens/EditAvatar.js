@@ -129,7 +129,7 @@ class EditAvatar extends React.Component {
                             </View>
                             <View style={{
                                 marginTop: hp(1),
-                                backgroundColor: '#250901',
+                                backgroundColor: '#9c1e1e',
                                 height: hp(30),
                                 width: wp(90),
                                 alignItems: 'center',
@@ -159,7 +159,7 @@ class EditAvatar extends React.Component {
                                     {
                                         profileProps.shapes.map((item, i) => {
                                             const btnStyle = this.getBtnStyle(i, profileProps.skins.length)
-                                            const backgroundColor = item.id === shape ? 'red' : '#460000'
+                                            const backgroundColor = item.id === shape ? 'red' : '#a02626'
                                             return (
                                                 <TouchableOpacity
                                                     key={i}
@@ -181,7 +181,7 @@ class EditAvatar extends React.Component {
                                     {
                                         profileProps.skins.map((item, i) => {
                                             const btnStyle = this.getBtnStyle(i, profileProps.skins.length)
-                                            const backgroundColor = item.id === skin ? 'red' : '#460000'
+                                            const backgroundColor = item.id === skin ? 'red' : '#a02626'
                                             return (
                                                 <TouchableOpacity
                                                     key={i}
@@ -203,7 +203,7 @@ class EditAvatar extends React.Component {
                                     {
                                         profileProps.hairs.map((item, i) => {
                                             const btnStyle = this.getBtnStyle(i, profileProps.hairs.length)
-                                            const backgroundColor = item.id === hair ? 'red' : '#460000'
+                                            const backgroundColor = item.id === hair ? 'red' : '#a02626'
                                             return (
                                                 <TouchableOpacity
                                                     key={i}
@@ -225,7 +225,7 @@ class EditAvatar extends React.Component {
                                     {
                                         profileProps.eyerows.map((item, i) => {
                                             const btnStyle = this.getBtnStyle(i, profileProps.eyerows.length)
-                                            const backgroundColor = eyerow === item.id ? 'red' : '#460000'
+                                            const backgroundColor = eyerow === item.id ? 'red' : '#a02626'
                                             return (
                                                 <TouchableOpacity
                                                     key={i}
@@ -246,7 +246,7 @@ class EditAvatar extends React.Component {
                                 <View style={styles.typeInnerView}>
                                     {profileProps.eyes && profileProps.eyes.map((item, i) => {
                                         const btnStyle = this.getBtnStyle(i, profileProps.eyes.length)
-                                        const backgroundColor = eye === item.id ? 'red' : '#460000'
+                                        const backgroundColor = eye === item.id ? 'red' : '#a02626'
                                         return (
                                             <TouchableOpacity
                                                 key={i}
@@ -266,7 +266,7 @@ class EditAvatar extends React.Component {
                                 <View style={styles.typeInnerView}>
                                     {profileProps.noses && profileProps.noses.map((item, i) => {
                                         const btnStyle = this.getBtnStyle(i, profileProps.noses.length)
-                                        const backgroundColor = nose === item.id ? 'red' : '#460000'
+                                        const backgroundColor = nose === item.id ? 'red' : '#a02626'
                                         return (
                                             <TouchableOpacity
                                                 key={i}
@@ -286,7 +286,7 @@ class EditAvatar extends React.Component {
                                 <View style={styles.typeInnerView}>
                                     {profileProps.lips && profileProps.lips.map((item, i) => {
                                         const btnStyle = this.getBtnStyle(i, profileProps.lips.length)
-                                        const backgroundColor = lip === item.id ? 'red' : '#460000'
+                                        const backgroundColor = lip === item.id ? 'red' : '#a02626'
                                         return (
                                             <TouchableOpacity
                                                 key={i}

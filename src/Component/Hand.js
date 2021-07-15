@@ -59,6 +59,9 @@ export default class Hand extends React.Component {
     getPreviewImage = (part, id) => {
         switch (part){
             case ('skin'):
+                if(this.props.real){
+                    return PLAYER_PROPS.skinColors.find(i => i.id === id).rimage;
+                }
                 return PLAYER_PROPS.skinColors.find(i => i.id === id).image;
             case ('nail'):
                 return PLAYER_PROPS.nailColors.find(i => i.id === id).image;
