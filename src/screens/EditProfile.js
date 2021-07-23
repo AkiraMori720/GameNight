@@ -70,7 +70,7 @@ class EditProfile extends React.Component {
         return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.mainContainer}>
-                    <Header bgColor={'#250901'} headerBorderWidth={2} title={'EDIT PROFILE'} />
+                    <Header onPress={() => this.props.navigation.goBack()} imgLeft={images.ic_back} imgLeftColor={'#fff'} bgColor={'#250901'} headerBorderWidth={2} title={'EDIT PROFILE'} />
                     <View style={styles.contentContainer}>
                         <View style={{ marginBottom: wp(3) }}>
                             <InputComponent
