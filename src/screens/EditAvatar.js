@@ -27,10 +27,8 @@ class EditAvatar extends React.Component {
             shape: profile.shape??1,
             skin: profile?.skin??1,
             hair: profile?.hair??1,
-            eyerow: profile?.eyerow??1,
+            hairColor: profile?.hairColor??1,
             eye: profile?.eye??1,
-            nose: profile?.nose??1,
-            lip: profile?.lip??1,
             loading: false
         }
     }
@@ -43,7 +41,7 @@ class EditAvatar extends React.Component {
     }
 
     _onPressSave = () => {
-        const { id, firstName, lastName, location, gender, shape, skin, hair, eyerow, eye, nose, lip } = this.state;
+        const { id, firstName, lastName, location, gender, shape, skin, hair, eye, hairColor } = this.state;
         const { auth, setUser } = this.props;
 
         const character = {
@@ -55,10 +53,8 @@ class EditAvatar extends React.Component {
             shape,
             skin,
             hair,
-            eyerow,
-            eye,
-            nose,
-            lip
+            hairColor,
+            eye
         };
 
 
@@ -111,7 +107,7 @@ class EditAvatar extends React.Component {
     }
 
     render() {
-        const { gender, hair, shape, skin, eyerow, eye, nose, lip, loading } = this.state
+        const { gender, hair, shape, skin, hairColor, eye, loading } = this.state
 
         const profileProps = (gender === GENDER_FEMALE)?FEMALE_PROFILE_PROPS:MALE_PROFILE_PROPS;
 
@@ -143,10 +139,8 @@ class EditAvatar extends React.Component {
                                     shape={shape}
                                     skin={skin}
                                     hair={hair}
-                                    eyerow={eyerow}
+                                    hairColor={hairColor}
                                     eye={eye}
-                                    nose={nose}
-                                    lip={lip}
                                 />
                             </View>
                         </View>
@@ -210,7 +204,7 @@ class EditAvatar extends React.Component {
                                                     onPress={() => this.setState({hair: item.id})}
                                                     style={[btnStyle, { backgroundColor: backgroundColor }]}
                                                 >
-                                                    <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
+                                                    <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.image} />
                                                 </TouchableOpacity>
                                             )
                                         })
@@ -218,21 +212,21 @@ class EditAvatar extends React.Component {
                                 </View>
                             </View>
                             <View style={styles.textView}>
-                                <Text style={styles.text}>EYEBROWS</Text>
+                                <Text style={styles.text}>HAIR COLOR</Text>
                             </View>
                             <View style={styles.typeView}>
                                 <View style={styles.typeInnerView}>
                                     {
-                                        profileProps.eyerows.map((item, i) => {
-                                            const btnStyle = this.getBtnStyle(i, profileProps.eyerows.length)
-                                            const backgroundColor = eyerow === item.id ? 'red' : '#a02626'
+                                        profileProps.hairColors.map((item, i) => {
+                                            const btnStyle = this.getBtnStyle(i, profileProps.skins.length)
+                                            const backgroundColor = hairColor === item.id ? 'red' : '#a02626'
                                             return (
                                                 <TouchableOpacity
                                                     key={i}
-                                                    onPress={() => this.setState({eyerow: item.id})}
+                                                    onPress={() => this.setState({hairColor: item.id})}
                                                     style={[btnStyle, { backgroundColor: backgroundColor }]}
                                                 >
-                                                    <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
+                                                    <Text style={styles.textBtn}>{item.value}</Text>
                                                 </TouchableOpacity>
                                             )
                                         })
@@ -254,46 +248,6 @@ class EditAvatar extends React.Component {
                                                 style={[btnStyle, { backgroundColor: backgroundColor }]}
                                             >
                                                 <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
-                                            </TouchableOpacity>
-                                        )
-                                    })}
-                                </View>
-                            </View>
-                            <View style={styles.textView}>
-                                <Text style={styles.text}>NOSE</Text>
-                            </View>
-                            <View style={styles.typeView}>
-                                <View style={styles.typeInnerView}>
-                                    {profileProps.noses && profileProps.noses.map((item, i) => {
-                                        const btnStyle = this.getBtnStyle(i, profileProps.noses.length)
-                                        const backgroundColor = nose === item.id ? 'red' : '#a02626'
-                                        return (
-                                            <TouchableOpacity
-                                                key={i}
-                                                onPress={() => this.setState({nose: item.id})}
-                                                style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                            >
-                                                <Image style={{ height: '60%', width: '80%', resizeMode: 'contain', }} source={item.value} />
-                                            </TouchableOpacity>
-                                        )
-                                    })}
-                                </View>
-                            </View>
-                            <View style={styles.textView}>
-                                <Text style={styles.text}>LIPS</Text>
-                            </View>
-                            <View style={styles.typeView}>
-                                <View style={styles.typeInnerView}>
-                                    {profileProps.lips && profileProps.lips.map((item, i) => {
-                                        const btnStyle = this.getBtnStyle(i, profileProps.lips.length)
-                                        const backgroundColor = lip === item.id ? 'red' : '#a02626'
-                                        return (
-                                            <TouchableOpacity
-                                                key={i}
-                                                onPress={() => this.setState({lip: item.id})}
-                                                style={[btnStyle, { backgroundColor: backgroundColor }]}
-                                            >
-                                                <Image style={{ height: '60%', width: '80%', resizeMode: 'contain' }} source={item.value} />
                                             </TouchableOpacity>
                                         )
                                     })}

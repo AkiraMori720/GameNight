@@ -12,104 +12,64 @@ const styles = {
     },
     maleSkin: {
         top: '5%',
-        width: '88%',
-        height: '88%',
+        width: '100%',
+        height: '100%',
         resizeMode: 'contain'
     },
     femaleSkin: {
         top: '8%',
-        width: '90%',
-        height: '90%',
+        width: '100%',
+        height: '100%',
         resizeMode: 'contain'
     },
     hair_1: {
         position: 'absolute',
-        top: '-30%',
-        width: '54%',
+        top: '4%',
+        width: '74%',
         height: '100%',
         resizeMode: 'contain'
     },
     hair_2: {
         position: 'absolute',
-        top: '-26%',
-        width: '56%',
+        top: '-27%',
+        width: '52%',
         height: '100%',
         resizeMode: 'contain'
     },
     hair_3: {
         position: 'absolute',
-        top: '-31%',
-        width: '50%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    eyerow: {
-        position: 'absolute',
-        top: '-17%',
-        width: '44%',
+        top: '-11%',
+        width: '76%',
         height: '100%',
         resizeMode: 'contain'
     },
     eye: {
         position: 'absolute',
-        top: '-9%',
-        width: '40%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    nose_1: {
-        position: 'absolute',
-        top: '6%',
-        width: '18%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    nose_2: {
-        position: 'absolute',
-        top: '6%',
-        width: '14%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    nose_3: {
-        position: 'absolute',
-        top: '6%',
-        width: '16%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    lip: {
-        position: 'absolute',
-        top: '16%',
-        width: '26%',
+        top: '-4%',
+        width: '28%',
         height: '100%',
         resizeMode: 'contain'
     },
     femaleHair_1: {
         position: 'absolute',
         top: '-7%',
-        width: '78%',
+        left: '9%',
+        width: '80%',
         height: '100%',
         resizeMode: 'contain'
     },
     femaleHair_2: {
         position: 'absolute',
-        top: '-7%',
-        width: '78%',
-        height: '100%',
+        top: '2%',
+        width: '100%',
+        height: '106%',
         resizeMode: 'contain'
     },
     femaleHair_3: {
         position: 'absolute',
-        top: '-7%',
-        width: '78%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleEyerow: {
-        position: 'absolute',
-        top: '-11%',
-        width: '48%',
+        top: '-2%',
+        left: '16%',
+        width: '76%',
         height: '100%',
         resizeMode: 'contain'
     },
@@ -117,48 +77,6 @@ const styles = {
         position: 'absolute',
         top: '-2%',
         width: '42%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleNose_1: {
-        position: 'absolute',
-        top: '10%',
-        width: '18%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleNose_2: {
-        position: 'absolute',
-        top: '10%',
-        width: '14%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleNose_3: {
-        position: 'absolute',
-        top: '10%',
-        width: '16%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleLip_1: {
-        position: 'absolute',
-        top: '21%',
-        width: '24%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleLip_2: {
-        position: 'absolute',
-        top: '21%',
-        width: '22%',
-        height: '100%',
-        resizeMode: 'contain'
-    },
-    femaleLip_3: {
-        position: 'absolute',
-        top: '22%',
-        width: '18%',
         height: '100%',
         resizeMode: 'contain'
     }
@@ -175,35 +93,32 @@ export default class Character extends React.Component {
     getPreviewImage = (gender, part, id) => {
         if(gender === GENDER_FEMALE){
             switch (part){
-                case ('skin'):
+                case ('skin'):{
                     const image_key = this.props.gender + '_' + (FEMALE_PROFILE_PROPS.skins.find(i => i.id === id).image) + '_' + (this.props.shape??"1");
                     return images[image_key];
-                case ('hair'):
-                    return FEMALE_PROFILE_PROPS.hairs.find(i => i.id === id).value;
-                case ('eyerow'):
-                    return FEMALE_PROFILE_PROPS.eyerows.find(i => i.id === id).value;
+                }
+                case ('hair'):{
+                    const hairColorStr = this.props.hairColor?FEMALE_PROFILE_PROPS.hairColors.find(i => i.id === this.props.hairColor).image:'yellow';
+                    const image_key = this.props.gender + '_hair_' + (hairColorStr) + '_' + (FEMALE_PROFILE_PROPS.hairs.find(i => i.id === id).value);
+                    return images[image_key];
+                }
                 case ('eye'):
                     return FEMALE_PROFILE_PROPS.eyes.find(i => i.id === id).value;
-                case ('nose'):
-                    return FEMALE_PROFILE_PROPS.noses.find(i => i.id === id).value;
-                case ('lip'):
-                    return FEMALE_PROFILE_PROPS.lips.find(i => i.id === id).value;
             }
         } else {
             switch (part){
-                case ('skin'):
-                    const image_key = this.props.gender + '_' + (FEMALE_PROFILE_PROPS.skins.find(i => i.id === id).image) + '_' + (this.props.shape??"1");
+                case ('skin'): {
+                    const image_key = this.props.gender + '_' + (MALE_PROFILE_PROPS.skins.find(i => i.id === id).image) + '_' + (this.props.shape ?? "1");
                     return images[image_key];
-                case ('hair'):
-                    return MALE_PROFILE_PROPS.hairs.find(i => i.id === id).value;
-                case ('eyerow'):
-                    return MALE_PROFILE_PROPS.eyerows.find(i => i.id === id).value;
+                }
+                case ('hair'): {
+                    const hairColorStr = this.props.hairColor?MALE_PROFILE_PROPS.hairColors.find(i => i.id === this.props.hairColor).image:'yellow';
+                    const image_key = this.props.gender + '_hair_' + (hairColorStr) + '_' + (MALE_PROFILE_PROPS.hairs.find(i => i.id === id).value);
+                    console.log('hair image', image_key);
+                    return images[image_key];
+                }
                 case ('eye'):
                     return MALE_PROFILE_PROPS.eyes.find(i => i.id === id).value;
-                case ('nose'):
-                    return MALE_PROFILE_PROPS.noses.find(i => i.id === id).value;
-                case ('lip'):
-                    return MALE_PROFILE_PROPS.lips.find(i => i.id === id).value;
             }
         }
 
@@ -211,20 +126,14 @@ export default class Character extends React.Component {
 
     render(){
         const { width } = this.state;
-        const { gender, skin, hair, eyerow, eye, nose, lip } = this.props;
+        const { gender, skin, hair, eye } = this.props;
         let skinStyle = styles.maleSkin;
         let hairStyle = (hair === 1)?styles.hair_1:((hair===2)?styles.hair_2:styles.hair_3);
-        let eyerowStyle = styles.eyerow;
         let eyeStyle = styles.eye;
-        let noseStyle = (nose === 1)?styles.nose_1:((nose===2)?styles.nose_2:styles.nose_3);
-        let lipStyle = styles.lip;
         if(gender===GENDER_FEMALE){
             skinStyle = styles.femaleSkin;
             hairStyle = (hair === 1)?styles.femaleHair_1:((hair===2)?styles.femaleHair_2:styles.femaleHair_3);
-            eyerowStyle = styles.femaleEyerow;
             eyeStyle = styles.femaleEye;
-            noseStyle = (nose === 1)?styles.femaleNose_1:((nose===2)?styles.femaleNose_2:styles.femaleNose_3);
-            lipStyle = (lip === 1)?styles.femaleLip_1:((lip===2)?styles.femaleLip_2:styles.femaleLip_3);
         }
 
 
@@ -237,11 +146,8 @@ export default class Character extends React.Component {
                 }}
             >
                 <Image style={skinStyle} source={this.getPreviewImage(gender, 'skin', skin)}/>
-                <Image style={eyerowStyle} source={this.getPreviewImage(gender, 'eyerow', eyerow)}/>
-                <Image style={eyeStyle} source={this.getPreviewImage(gender, 'eye', eye)}/>
                 <Image style={hairStyle} source={this.getPreviewImage(gender, 'hair', hair)}/>
-                <Image style={noseStyle} source={this.getPreviewImage(gender, 'nose', nose)}/>
-                <Image style={lipStyle} source={this.getPreviewImage(gender, 'lip', lip)}/>
+                <Image style={eyeStyle} source={this.getPreviewImage(gender, 'eye', eye)}/>
             </View>
         );
     }

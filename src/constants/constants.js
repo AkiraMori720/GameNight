@@ -28,20 +28,16 @@ export const GENDER_FEMALE = 'female';
 export const MALE_PROFILE_PROPS = {
     shapes: [{id:1, value:'Shape 1'}, {id:2, value:'Shape 2'}, {id:3, value:'Shape 3'}],
     skins: [{id:1, value:'#ead2b9', image: 'light'}, {id:2, value:'#4d3418', image: 'brown'}, {id:3, value:'#22160b', image: 'dark'}],
-    hairs: [{id:1, value:images.male_hair_1}, {id:2, value:images.male_hair_2}, {id:3, value:images.male_hair_3}],
-    eyerows: [{id:1, value:images.male_eyerows_1}, {id:2, value:images.male_eyerows_2}, {id:3, value:images.male_eyerows_3}],
+    hairs: [{id:1, value:1, image: images.male_hair_yellow_1}, {id:2, value:2, image: images.male_hair_yellow_2}, {id:3, value:3, image: images.male_hair_yellow_3}],
+    hairColors: [{id:1, value:'Color 1', image: 'yellow'}, {id:2, value:'Color 2', image: 'red'}, {id:3, value:'Color 3', image: 'dark'}],
     eyes: [{id:1, value:images.male_eyes_1}, {id:2, value:images.male_eyes_2}, {id:3, value:images.male_eyes_3}],
-    noses: [{id:1, value:images.male_nose_1}, {id:2, value:images.male_nose_2}, {id:3, value:images.male_nose_3}],
-    lips: [{id:1, value:images.male_lips_1}, {id:2, value:images.male_lips_2}, {id:3, value:images.male_lips_3}],
 }
 export const FEMALE_PROFILE_PROPS = {
     shapes: [{id:1, value:'Shape 1'}, {id:2, value:'Shape 2'}, {id:3, value:'Shape 3'}],
     skins: [{id:1, value:'#ead2b9', image: 'light'}, {id:2, value:'#4d3418', image: 'brown'}, {id:3, value:'#22160b', image: 'dark'}],
-    hairs: [{id:1, value:images.female_hair_1}, {id:2, value:images.female_hair_2}, {id:3, value:images.female_hair_3}],
-    eyerows: [{id:1, value:images.female_eyerows_1}, {id:2, value:images.female_eyerows_2}, {id:3, value:images.female_eyerows_3}],
+    hairs: [{id:1, value:1, image: images.female_hair_yellow_1}, {id:2, value:2, image: images.female_hair_yellow_2}, {id:3, value:3, image: images.female_hair_yellow_3}],
+    hairColors: [{id:1, value:'Color 1', image: 'yellow'}, {id:2, value:'Color 2', image: 'red'}, {id:3, value:'Color 3', image: 'dark'}],
     eyes: [{id:1, value:images.female_eyes_1}, {id:2, value:images.female_eyes_2}, {id:3, value:images.female_eyes_3}],
-    noses: [{id:1, value:images.female_nose_1}, {id:2, value:images.female_nose_2}, {id:3, value:images.female_nose_3}],
-    lips: [{id:1, value:images.female_lips_1}, {id:2, value:images.female_lips_2}, {id:3, value:images.female_lips_3}],
 }
 export const PLAYER_PROPS = {
     skinColors: [{id:1, value:'#ead2b9', image: images.hand_skin_1, rimage: images.hand_skin_r_1}, {id:2, value:'#4d3418', image: images.hand_skin_2, rimage: images.hand_skin_r_2}, {id:3, value:'#22160b', image: images.hand_skin_3, rimage: images.hand_skin_r_3}],
